@@ -3,7 +3,7 @@
 > Agent memory system with a public, reproducible evaluation framework.
 > Hybrid retrieval, contradiction detection, configurable temporal decay, importance-weighted eviction — all measurable from a single `make eval` command.
 
-**Status**: 🚧 Pre-v0.1 — week 0 verification done, implementation has not started. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
+**Status**: v0.1 in progress — core, service, eval skeleton committed; smoke end-to-end pending Docker daemon recovery on author machine. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
 
 ---
 
@@ -26,30 +26,47 @@ This is *not* a benchmark-chasing attempt. The goal is not to beat Mem0 or Zep o
 
 ---
 
-## Quick start (target — not yet implemented)
+## Quick start (v0.1 — what works today)
+
+Requires Docker Desktop, Python 3.12+, `uv`, GNU Make.
 
 ```powershell
 git clone https://github.com/alvarocanoo/mnemos.git
 cd mnemos
-docker compose up -d              # postgres, qdrant, service, dashboard
-make seed                         # load mnemos-bench-v1 + ingest
-make eval                         # run full suite, append leaderboard row
-make demo                         # open dashboard at localhost:3000
+make sync               # uv sync (installs workspace + deps)
+make up                 # build + start postgres, qdrant, service
+make verify-stack       # hits /healthz on all three
+make eval               # ingests seed_v0.jsonl, computes recall@1/5/10, appends leaderboard.md
+```
+
+First `make up` builds the service image (~3-5 min on first run; subsequent rebuilds use the uv cache layer). First `make eval` downloads BGE-M3 (~2 GB) into a Docker volume; subsequent runs reuse it.
+
+Manual probe of the API:
+
+```powershell
+curl http://localhost:8000/readyz
+curl -X POST http://localhost:8000/memories `
+  -H "Content-Type: application/json" `
+  -d '{"content":"My favorite color is teal","user_id":"me"}'
+curl -X POST http://localhost:8000/search/dense `
+  -H "Content-Type: application/json" `
+  -d '{"query":"what color do I like","user_id":"me","limit":5}'
 ```
 
 ---
 
-## Project structure (planned)
+## Project structure
 
 ```
 mnemos/
   packages/
-    core/        # pip-installable library: storage, retrieval, memory ops
-    service/     # FastAPI wrapper exposing the library as HTTP
-    eval/        # the differentiator: dataset, runners, metrics, leaderboard
-    dashboard/   # Next.js read-only views over memories + leaderboard
+    core/        # mnemos library: storage (Postgres + Qdrant), retrieval, memory ops, embeddings
+    service/     # FastAPI HTTP wrapper + Dockerfile + entrypoint
+    eval/        # mnemos-eval CLI: dataset + runner + metrics + leaderboard
+    # dashboard/ # v0.5 — Next.js read-only views
   docker-compose.yml
   Makefile
+  pyproject.toml + uv.lock   # uv workspace
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for module-level detail and design rationale.

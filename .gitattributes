@@ -1,0 +1,14 @@
+# Force LF on shell scripts so the Linux container can execute them
+# regardless of the developer's OS.
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+
+# Force LF on Python source to keep diffs sane across platforms.
+*.py text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.jsonl text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf

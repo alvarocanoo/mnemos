@@ -1,5 +1,4 @@
-# mnemos — local stack
-# Stub for week 0. Service + dashboard get added in v0.1.
+# mnemos — local stack (v0.1)
 
 services:
   postgres:
@@ -28,25 +27,33 @@ services:
     volumes:
       - qdrant-data:/qdrant/storage
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:6333/healthz || exit 1"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  # service:    # v0.1
-  #   build: ./packages/service
-  #   depends_on:
-  #     postgres: { condition: service_healthy }
-  #     qdrant:   { condition: service_healthy }
-  #   ports:
-  #     - "8000:8000"
+  service:
+    build:
+      context: .
+      dockerfile: packages/service/Dockerfile
+    container_name: mnemos-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      qdrant:   { condition: service_healthy }
+    environment:
+      MNEMOS_DATABASE_URL: postgresql+psycopg://mnemos:mnemos@postgres:5432/mnemos
+      MNEMOS_QDRANT_URL: http://qdrant:6333
+      MNEMOS_QDRANT_COLLECTION: mnemos
+      MNEMOS_EMBEDDING_MODEL: BAAI/bge-m3
+      MNEMOS_EMBEDDING_DIM: "1024"
+    ports:
+      - "8000:8000"
+    volumes:
+      - fastembed-cache:/root/.cache/fastembed
 
-  # dashboard:  # v0.5
-  #   build: ./packages/dashboard
-  #   depends_on: [service]
-  #   ports:
-  #     - "3000:3000"
+  # dashboard:  # v0.5 (Next.js read-only views)
 
 volumes:
   postgres-data:
   qdrant-data:
+  fastembed-cache:
