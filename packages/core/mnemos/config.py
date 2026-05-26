@@ -67,6 +67,16 @@ class Settings(BaseSettings):
     decay_lambda_normal: float = Field(default=0.02, description="λ for importance=2 memories.")
     decay_lambda_high: float = Field(default=0.005, description="λ for importance=3 memories.")
 
+    eviction_w_importance: float = Field(
+        default=1.0, description="Eviction composite weight for importance."
+    )
+    eviction_w_recency: float = Field(
+        default=1.0, description="Eviction composite weight for recency (decay weight)."
+    )
+    eviction_w_access: float = Field(
+        default=0.5, description="Eviction composite weight for log(1+access_count)."
+    )
+
 
 def get_settings() -> Settings:
     return Settings()

@@ -179,3 +179,13 @@ def delete_point(settings: Settings, memory_id: UUID) -> None:
         collection_name=settings.qdrant_collection,
         points_selector=qm.PointIdsList(points=[str(memory_id)]),
     )
+
+
+def delete_points_bulk(settings: Settings, memory_ids: list[UUID]) -> None:
+    if not memory_ids:
+        return
+    client = get_client()
+    client.delete(
+        collection_name=settings.qdrant_collection,
+        points_selector=qm.PointIdsList(points=[str(mid) for mid in memory_ids]),
+    )
