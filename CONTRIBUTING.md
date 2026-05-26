@@ -18,6 +18,15 @@ uv sync
 uv run pytest -q   # 71 tests, ~10s; no Docker required
 ```
 
+Optional but strongly recommended: install pre-commit hooks so ruff runs on every commit and CI never catches lint errors that you could have caught locally.
+
+```powershell
+pip install pre-commit
+pre-commit install
+```
+
+Optional: copy `.env.example` to `.env` if you want to override defaults.
+
 ## Before opening a PR
 
 Run all three locally:
