@@ -13,6 +13,7 @@ help:
 	@echo "  make eval            run mnemos-eval (dense mode), append leaderboard row"
 	@echo "  make eval-hybrid     run mnemos-eval (hybrid BM25+dense RRF) row"
 	@echo "  make eval-compare    run BOTH modes back-to-back for side-by-side leaderboard"
+	@echo "  make eval-contradiction  run LLM-judge on contradiction_v0.jsonl (needs ANTHROPIC_API_KEY)"
 	@echo "  make test            run pytest"
 	@echo "  make lint            run ruff check"
 	@echo "  make demo            (v0.5) open dashboard at http://localhost:3000"
@@ -60,6 +61,13 @@ eval-hybrid:
 eval-compare:
 	uv run mnemos-eval compare \
 		--dataset packages/eval/mnemos_eval/datasets/seed_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs
+
+eval-contradiction:
+	uv run mnemos-eval contradiction \
+		--dataset packages/eval/mnemos_eval/datasets/contradiction_v0.jsonl \
 		--service-url http://localhost:8000 \
 		--leaderboard leaderboard.md \
 		--runs-dir eval-runs

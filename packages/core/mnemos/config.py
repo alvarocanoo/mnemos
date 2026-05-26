@@ -40,7 +40,15 @@ class Settings(BaseSettings):
     )
     judge_model: str = Field(
         default="claude-haiku-4-5",
-        description="LLM judge for contradiction eval (used in v0.5+).",
+        description="LLM judge for contradiction detection (Anthropic API).",
+    )
+    judge_max_tokens: int = Field(
+        default=256,
+        description="Cap on judge response length (tool_use output is tiny).",
+    )
+    anthropic_api_key: str | None = Field(
+        default=None,
+        description="Anthropic API key. Falls back to ANTHROPIC_API_KEY env var.",
     )
 
 

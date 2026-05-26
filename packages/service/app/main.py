@@ -7,7 +7,7 @@ from mnemos.config import get_settings
 from mnemos.storage.postgres import init_engine
 from mnemos.storage.qdrant import ensure_collection, init_client
 
-from app.routers import health, memories, search
+from app.routers import contradiction, health, memories, search
 
 log = structlog.get_logger()
 
@@ -32,3 +32,4 @@ app = FastAPI(title="mnemos", version="0.0.1", lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(memories.router)
 app.include_router(search.router)
+app.include_router(contradiction.router)

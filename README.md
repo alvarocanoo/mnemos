@@ -3,7 +3,7 @@
 > Agent memory system with a public, reproducible evaluation framework.
 > Hybrid retrieval, contradiction detection, configurable temporal decay, importance-weighted eviction — all measurable from a single `make eval` command.
 
-**Status**: v0.5 partial — hybrid retrieval (BM25 + dense + RRF) and precision@k landed; contradiction detection, temporal decay, eviction, dashboard pending. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
+**Status**: v0.5 partial — hybrid retrieval (BM25 + dense + RRF), precision@k, and contradiction detection (LLM-judge with Claude Haiku 4.5) landed; NLI baseline, temporal decay, eviction, dashboard pending. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
 
 ---
 
@@ -55,7 +55,12 @@ curl -X POST http://localhost:8000/search/dense `
 curl -X POST http://localhost:8000/search/hybrid `
   -H "Content-Type: application/json" `
   -d '{"query":"what color do I like","user_id":"me","limit":5}'
+curl -X POST http://localhost:8000/contradiction/detect `
+  -H "Content-Type: application/json" `
+  -d '{"memory_a":"The Q3 budget is 450k EUR","memory_b":"The Q3 budget is 600k EUR"}'
 ```
+
+For `make eval-contradiction` and the `/contradiction/detect` endpoint, set `ANTHROPIC_API_KEY` in the host shell before `make up` (docker-compose passes it through to the service container).
 
 ---
 

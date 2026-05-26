@@ -46,6 +46,8 @@ services:
       MNEMOS_QDRANT_COLLECTION: mnemos
       MNEMOS_EMBEDDING_MODEL: BAAI/bge-m3
       MNEMOS_EMBEDDING_DIM: "1024"
+      MNEMOS_JUDGE_MODEL: claude-haiku-4-5
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - "8000:8000"
     volumes:
