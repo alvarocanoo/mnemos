@@ -1,12 +1,11 @@
 from fastapi import APIRouter
-from sqlalchemy.orm import Session
-
 from mnemos.config import Settings
 from mnemos.embeddings.bge_m3 import DenseEmbedder
 from mnemos.embeddings.bm25 import SparseEmbedder
 from mnemos.models import SearchHit, SearchQuery
 from mnemos.retrieval.dense import dense_search
 from mnemos.retrieval.hybrid import hybrid_search
+from sqlalchemy.orm import Session
 
 from app.deps import (
     DenseEmbedderDep,

@@ -1,5 +1,4 @@
 from mnemos.contradiction.types import Verdict
-
 from mnemos_eval.metrics.contradiction import (
     collapsed_positive_f1,
     per_class_breakdown,

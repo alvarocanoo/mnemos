@@ -3,8 +3,9 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, create_engine, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PgUUID
+from sqlalchemy import DateTime, Index, String, create_engine, func
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from mnemos.config import Settings
@@ -21,9 +22,7 @@ class MemoryRow(Base):
     user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default")
     content: Mapped[str] = mapped_column(String, nullable=False)
     importance: Mapped[int] = mapped_column(nullable=False, default=2)
-    extra: Mapped[dict[str, Any]] = mapped_column(
-        "metadata", JSONB, nullable=False, default=dict
-    )
+    extra: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

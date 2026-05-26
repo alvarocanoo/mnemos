@@ -23,7 +23,7 @@ def _git_sha(cwd: Path) -> str:
 
 
 def _ingest_case(client: httpx.Client, case: dict[str, Any]) -> list[str]:
-    """Ingest memories for one case under a unique user_id; return the resulting memory ids in order."""
+    """Ingest memories for a case under a unique user_id; return the resulting ids in order."""
     user_id = f"bench_{case['id']}"
     ids: list[str] = []
     for mem in case["memories"]:
@@ -78,8 +78,7 @@ def run_suite(
     cases = [c for c in all_cases if c.get("task_type") in _RETRIEVAL_TASK_TYPES]
     if not cases:
         raise ValueError(
-            f"No retrieval-style cases in {dataset_path} "
-            f"(task_type in {_RETRIEVAL_TASK_TYPES})"
+            f"No retrieval-style cases in {dataset_path} (task_type in {_RETRIEVAL_TASK_TYPES})"
         )
 
     recalls_1: list[float] = []

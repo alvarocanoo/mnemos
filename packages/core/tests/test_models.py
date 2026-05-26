@@ -1,7 +1,6 @@
 import pytest
-from pydantic import ValidationError
-
 from mnemos.models import MemoryWrite, SearchQuery
+from pydantic import ValidationError
 
 
 def test_memory_write_defaults():

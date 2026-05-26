@@ -34,12 +34,8 @@ def dense_search(
     if not hits:
         return []
 
-    id_to_score = {memory_id: score for memory_id, score in hits}
-    rows = (
-        session.query(MemoryRow)
-        .filter(MemoryRow.id.in_(id_to_score.keys()))
-        .all()
-    )
+    id_to_score = dict(hits)
+    rows = session.query(MemoryRow).filter(MemoryRow.id.in_(id_to_score.keys())).all()
 
     cfg = _decay_cfg(settings) if apply else None
     results: list[SearchHit] = []

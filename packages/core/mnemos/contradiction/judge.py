@@ -7,7 +7,6 @@ import anthropic
 
 from mnemos.contradiction.types import ContradictionInput, ContradictionResult, Verdict
 
-
 _TOOL_NAME = "report_verdict"
 
 _TOOL_SCHEMA: dict[str, Any] = {
@@ -98,9 +97,7 @@ class ContradictionJudge:
             messages=[
                 {
                     "role": "user",
-                    "content": _USER_TEMPLATE.format(
-                        a=payload.memory_a, b=payload.memory_b
-                    ),
+                    "content": _USER_TEMPLATE.format(a=payload.memory_a, b=payload.memory_b),
                 }
             ],
         )
@@ -114,6 +111,4 @@ class ContradictionJudge:
                     judge_model=self.model,
                 )
 
-        raise RuntimeError(
-            f"Judge did not produce a tool_use block; got: {response.content!r}"
-        )
+        raise RuntimeError(f"Judge did not produce a tool_use block; got: {response.content!r}")

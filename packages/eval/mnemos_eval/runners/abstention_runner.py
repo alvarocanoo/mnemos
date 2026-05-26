@@ -8,7 +8,6 @@ import httpx
 from mnemos_eval.metrics.abstention import abstention_rate, abstention_score
 from mnemos_eval.runners.fixtures import load_jsonl
 
-
 SearchMode = Literal["dense", "hybrid"]
 _ENDPOINT_BY_MODE = {"dense": "/search/dense", "hybrid": "/search/hybrid"}
 
@@ -65,9 +64,7 @@ def run_abstention_suite(
 ) -> dict[str, Any]:
     cases = [c for c in load_jsonl(dataset_path) if c.get("task_type") == "abstention"]
     if not cases:
-        raise ValueError(
-            f"No task_type=abstention cases found in {dataset_path}"
-        )
+        raise ValueError(f"No task_type=abstention cases found in {dataset_path}")
 
     scores: list[int] = []
     latencies_ms: list[float] = []

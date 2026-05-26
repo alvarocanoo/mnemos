@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
 
 _COLUMNS = [
     "timestamp",
@@ -60,11 +59,9 @@ _CONTRADICTION_COLUMNS = [
     "p95_ms",
 ]
 
+
 def _make_header(columns: list[str]) -> str:
-    return (
-        "| " + " | ".join(columns) + " |\n"
-        + "|" + "|".join(["---"] * len(columns)) + "|\n"
-    )
+    return "| " + " | ".join(columns) + " |\n" + "|" + "|".join(["---"] * len(columns)) + "|\n"
 
 
 _HEADER = _make_header(_COLUMNS)
@@ -114,4 +111,4 @@ def append_abstention_row(path: Path, row: dict[str, Any]) -> None:
 
 
 def now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")

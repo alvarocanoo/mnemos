@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
-
 from mnemos.config import get_settings
 from mnemos.storage.postgres import init_engine
 from mnemos.storage.qdrant import ensure_collection, init_client

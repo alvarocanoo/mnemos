@@ -1,9 +1,6 @@
 from uuid import UUID
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
-
 from mnemos.config import Settings
 from mnemos.memory.decay import DecayConfig
 from mnemos.memory.eviction import (
@@ -13,6 +10,8 @@ from mnemos.memory.eviction import (
 )
 from mnemos.storage.postgres import MemoryRow
 from mnemos.storage.qdrant import delete_points_bulk
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from app.deps import SessionDep, SettingsDep
 
@@ -91,24 +90,21 @@ def evict(
     after the SQL commit so a Postgres failure cannot orphan vectors.
     """
     targets = select_for_eviction(
-        session, payload.user_id, payload.max_count,
-        decay_cfg=_decay(settings), eviction_cfg=_evict_cfg(settings),
+        session,
+        payload.user_id,
+        payload.max_count,
+        decay_cfg=_decay(settings),
+        eviction_cfg=_evict_cfg(settings),
     )
     if not targets:
-        remaining = session.query(MemoryRow).filter(
-            MemoryRow.user_id == payload.user_id
-        ).count()
+        remaining = session.query(MemoryRow).filter(MemoryRow.user_id == payload.user_id).count()
         return EvictionResponse(evicted=[], remaining=remaining)
 
     ids = [t.memory_id for t in targets]
-    session.query(MemoryRow).filter(MemoryRow.id.in_(ids)).delete(
-        synchronize_session=False
-    )
+    session.query(MemoryRow).filter(MemoryRow.id.in_(ids)).delete(synchronize_session=False)
     session.commit()
 
     delete_points_bulk(settings, ids)
 
-    remaining = session.query(MemoryRow).filter(
-        MemoryRow.user_id == payload.user_id
-    ).count()
+    remaining = session.query(MemoryRow).filter(MemoryRow.user_id == payload.user_id).count()
     return EvictionResponse(evicted=ids, remaining=remaining)

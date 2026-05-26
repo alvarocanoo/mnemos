@@ -1,6 +1,6 @@
 import statistics
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
 
@@ -9,18 +9,15 @@ import httpx
 from mnemos_eval.metrics.temporal import aggregate, temporal_consistency_score
 from mnemos_eval.runners.fixtures import load_jsonl
 
-
 SearchMode = Literal["dense", "hybrid"]
 _ENDPOINT_BY_MODE = {"dense": "/search/dense", "hybrid": "/search/hybrid"}
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-def _ingest_case_with_ages(
-    client: httpx.Client, case: dict[str, Any]
-) -> list[str]:
+def _ingest_case_with_ages(client: httpx.Client, case: dict[str, Any]) -> list[str]:
     user_id = f"bench_{case['id']}"
     now = _now()
     ids: list[str] = []
@@ -85,9 +82,7 @@ def run_temporal_suite(
     cases = load_jsonl(dataset_path)
     cases = [c for c in cases if c.get("task_type") == "temporal_update"]
     if not cases:
-        raise ValueError(
-            f"No task_type=temporal_update cases found in {dataset_path}"
-        )
+        raise ValueError(f"No task_type=temporal_update cases found in {dataset_path}")
 
     scores: list[int] = []
     latencies_ms: list[float] = []
@@ -108,8 +103,12 @@ def run_temporal_suite(
                 {
                     "id": case["id"],
                     "score": score,
-                    "current_pos": retrieved.index(current_id) if current_id in retrieved else None,
-                    "superseded_pos": retrieved.index(superseded_id) if superseded_id in retrieved else None,
+                    "current_pos": (
+                        retrieved.index(current_id) if current_id in retrieved else None
+                    ),
+                    "superseded_pos": (
+                        retrieved.index(superseded_id) if superseded_id in retrieved else None
+                    ),
                     "latency_ms": round(latency_ms, 2),
                 }
             )

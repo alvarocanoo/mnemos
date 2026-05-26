@@ -6,7 +6,6 @@ from qdrant_client.http import models as qm
 from mnemos.config import Settings
 from mnemos.embeddings.bm25 import SparseVec
 
-
 _DENSE_VECTOR_NAME = "dense"
 _SPARSE_VECTOR_NAME = "sparse"
 
@@ -50,9 +49,7 @@ def ensure_collection(settings: Settings) -> None:
     )
 
 
-def upsert_dense(
-    settings: Settings, memory_id: UUID, vector: list[float], payload: dict
-) -> None:
+def upsert_dense(settings: Settings, memory_id: UUID, vector: list[float], payload: dict) -> None:
     client = get_client()
     client.upsert(
         collection_name=settings.qdrant_collection,
@@ -92,9 +89,7 @@ def upsert_point(
 
 
 def _user_filter(user_id: str) -> qm.Filter:
-    return qm.Filter(
-        must=[qm.FieldCondition(key="user_id", match=qm.MatchValue(value=user_id))]
-    )
+    return qm.Filter(must=[qm.FieldCondition(key="user_id", match=qm.MatchValue(value=user_id))])
 
 
 def search_dense(
@@ -158,9 +153,7 @@ def hybrid_search(
                 filter=_user_filter(user_id),
             ),
             qm.Prefetch(
-                query=qm.SparseVector(
-                    indices=sparse_query.indices, values=sparse_query.values
-                ),
+                query=qm.SparseVector(indices=sparse_query.indices, values=sparse_query.values),
                 using=_SPARSE_VECTOR_NAME,
                 limit=prefetch_limit,
                 filter=_user_filter(user_id),

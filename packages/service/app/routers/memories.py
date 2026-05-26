@@ -1,8 +1,6 @@
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy.orm import Session
-
 from mnemos.config import Settings
 from mnemos.embeddings.bge_m3 import DenseEmbedder
 from mnemos.embeddings.bm25 import SparseEmbedder
@@ -14,6 +12,7 @@ from mnemos.memory.ops import (
 )
 from mnemos.models import Memory, MemoryWrite
 from mnemos.storage.qdrant import delete_point
+from sqlalchemy.orm import Session
 
 from app.deps import DenseEmbedderDep, SessionDep, SettingsDep, SparseEmbedderDep
 

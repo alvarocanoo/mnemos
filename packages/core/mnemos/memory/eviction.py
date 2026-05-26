@@ -65,9 +65,7 @@ def score_user_memories(
     """Score every memory of a user. Cheap for the v0.5 scale (<10k memories per user)."""
     dcfg = decay_cfg or DecayConfig()
     ecfg = eviction_cfg or EvictionConfig()
-    rows = session.execute(
-        select(MemoryRow).where(MemoryRow.user_id == user_id)
-    ).scalars().all()
+    rows = session.execute(select(MemoryRow).where(MemoryRow.user_id == user_id)).scalars().all()
 
     scored: list[ScoredMemory] = []
     for row in rows:
@@ -104,8 +102,11 @@ def select_for_eviction(
     if max_count < 0:
         raise ValueError("max_count must be >= 0")
     scored = score_user_memories(
-        session, user_id,
-        decay_cfg=decay_cfg, eviction_cfg=eviction_cfg, now=now,
+        session,
+        user_id,
+        decay_cfg=decay_cfg,
+        eviction_cfg=eviction_cfg,
+        now=now,
     )
     excess = len(scored) - max_count
     if excess <= 0:

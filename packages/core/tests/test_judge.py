@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from mnemos.contradiction.judge import (
     ContradictionJudge,
     JudgeUnavailableError,

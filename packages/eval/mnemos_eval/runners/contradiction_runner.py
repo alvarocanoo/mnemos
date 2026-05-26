@@ -8,16 +8,13 @@ import httpx
 from mnemos_eval.metrics.contradiction import collapsed_positive_f1, per_class_breakdown
 from mnemos_eval.runners.fixtures import load_jsonl
 
-
 _ENDPOINT_BY_JUDGE = {
     "llm": "/contradiction/detect",
     "nli": "/contradiction/baseline",
 }
 
 
-def _call_judge(
-    client: httpx.Client, case: dict[str, Any], endpoint: str
-) -> tuple[str, float]:
+def _call_judge(client: httpx.Client, case: dict[str, Any], endpoint: str) -> tuple[str, float]:
     t0 = time.perf_counter()
     resp = client.post(
         endpoint,
@@ -70,9 +67,7 @@ def run_contradiction_suite(
             )
 
     if not predicted:
-        raise ValueError(
-            f"No task_type=contradiction cases found in {dataset_path}"
-        )
+        raise ValueError(f"No task_type=contradiction cases found in {dataset_path}")
 
     collapsed = collapsed_positive_f1(predicted, gold)
     per_class = per_class_breakdown(predicted, gold)

@@ -1,12 +1,10 @@
 import json
 from pathlib import Path
-from typing import Literal
 
 import typer
+from mnemos.config import get_settings
 from rich.console import Console
 from rich.table import Table
-
-from mnemos.config import get_settings
 
 from mnemos_eval.report.leaderboard import (
     append_abstention_row,
@@ -73,17 +71,12 @@ def run(
     summary["timestamp"] = now_iso()
 
     runs_dir.mkdir(parents=True, exist_ok=True)
-    run_path = (
-        runs_dir
-        / f"eval_run_{mode}_{git_sha}_{summary['timestamp'].replace(':', '-')}.json"
-    )
+    run_path = runs_dir / f"eval_run_{mode}_{git_sha}_{summary['timestamp'].replace(':', '-')}.json"
     run_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     append_row(leaderboard, summary)
 
-    table = Table(
-        title=f"mnemos-eval — {summary['dataset']} (mode={mode}, n={summary['n']})"
-    )
+    table = Table(title=f"mnemos-eval — {summary['dataset']} (mode={mode}, n={summary['n']})")
     for col in [
         "recall@1",
         "recall@5",
@@ -303,7 +296,11 @@ def temporal(
     )
     for col in ["temporal_consistency", "p50_ms", "p95_ms"]:
         table.add_column(col, justify="right")
-    table.add_row(str(summary["temporal_consistency"]), str(summary["p50_ms"]), str(summary["p95_ms"]))
+    table.add_row(
+        str(summary["temporal_consistency"]),
+        str(summary["p50_ms"]),
+        str(summary["p95_ms"]),
+    )
     console.print(table)
     console.print(f"Wrote leaderboard row to [bold]{leaderboard}[/]")
     console.print(f"Wrote full run to     [bold]{run_path}[/]")
@@ -312,8 +309,7 @@ def temporal(
         console.print(f"\n[bold]Misses ({len(misses)}):[/]")
         for m in misses:
             console.print(
-                f"  {m['id']}: current_pos={m['current_pos']} "
-                f"superseded_pos={m['superseded_pos']}"
+                f"  {m['id']}: current_pos={m['current_pos']} superseded_pos={m['superseded_pos']}"
             )
 
 
@@ -357,8 +353,13 @@ def abstention(
     runs_dir: Path = typer.Option(Path.cwd() / "eval-runs", "--runs-dir"),
     mode: str = typer.Option("hybrid", "--mode", "-m"),
     threshold: float = typer.Option(
-        0.5, "--threshold", "-t",
-        help="Score threshold passed to /search; hits below this are dropped before the abstention check.",
+        0.5,
+        "--threshold",
+        "-t",
+        help=(
+            "Score threshold passed to /search; "
+            "hits below this are dropped before the abstention check."
+        ),
     ),
 ) -> None:
     """Ingest each abstention case, query with score_threshold, score 1 if retrieved=[]."""
@@ -380,8 +381,7 @@ def abstention(
 
     runs_dir.mkdir(parents=True, exist_ok=True)
     run_path = (
-        runs_dir
-        / f"eval_abstention_{mode}_{git_sha}_{summary['timestamp'].replace(':', '-')}.json"
+        runs_dir / f"eval_abstention_{mode}_{git_sha}_{summary['timestamp'].replace(':', '-')}.json"
     )
     run_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
     append_abstention_row(leaderboard, summary)

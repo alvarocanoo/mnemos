@@ -8,7 +8,6 @@ from mnemos.contradiction.types import (
     Verdict,
 )
 
-
 _DEFAULT_MODEL = "cross-encoder/nli-deberta-v3-base"
 
 _REQUIRED_LABELS = {"contradiction", "entailment", "neutral"}
@@ -133,6 +132,4 @@ class NLIBaseline:
                 f"(contra_max={contra:.3f}, entail_min={entail:.3f})"
             )
 
-        return ContradictionResult(
-            verdict=verdict, reason=reason, judge_model=self.model_name
-        )
+        return ContradictionResult(verdict=verdict, reason=reason, judge_model=self.model_name)

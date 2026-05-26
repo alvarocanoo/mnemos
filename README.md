@@ -1,5 +1,9 @@
 # mnemos
 
+[![ci](https://github.com/alvarocanoo/mnemos/actions/workflows/ci.yml/badge.svg)](https://github.com/alvarocanoo/mnemos/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](pyproject.toml)
+
 > Agent memory system with a public, reproducible evaluation framework.
 > Hybrid retrieval, contradiction detection (LLM judge + NLI baseline), configurable temporal decay, importance-weighted eviction — all measurable from `make eval`.
 

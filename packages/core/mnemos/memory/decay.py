@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -45,10 +45,10 @@ def decay_weight(
 
 
 def age_in_days(created_at: datetime, now: datetime | None = None) -> float:
-    reference = now or datetime.now(timezone.utc)
+    reference = now or datetime.now(UTC)
     if created_at.tzinfo is None:
-        created_at = created_at.replace(tzinfo=timezone.utc)
+        created_at = created_at.replace(tzinfo=UTC)
     if reference.tzinfo is None:
-        reference = reference.replace(tzinfo=timezone.utc)
+        reference = reference.replace(tzinfo=UTC)
     delta = reference - created_at
     return max(0.0, delta.total_seconds() / 86_400.0)

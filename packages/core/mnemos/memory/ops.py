@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -9,7 +9,7 @@ from mnemos.embeddings.bge_m3 import DenseEmbedder
 from mnemos.embeddings.bm25 import SparseEmbedder
 from mnemos.models import Memory, MemoryWrite
 from mnemos.storage.postgres import MemoryRow
-from mnemos.storage.qdrant import delete_point, upsert_point
+from mnemos.storage.qdrant import upsert_point
 
 
 def row_to_model(row: MemoryRow) -> Memory:
@@ -60,13 +60,15 @@ def write_memory(
     return row_to_model(row)
 
 
-def read_memory_by_id(session: Session, memory_id: UUID, *, bump_access: bool = True) -> Memory | None:
+def read_memory_by_id(
+    session: Session, memory_id: UUID, *, bump_access: bool = True
+) -> Memory | None:
     row = session.get(MemoryRow, memory_id)
     if row is None:
         return None
     if bump_access:
         row.access_count += 1
-        row.last_accessed_at = datetime.now(timezone.utc)
+        row.last_accessed_at = datetime.now(UTC)
         session.commit()
         session.refresh(row)
     return row_to_model(row)

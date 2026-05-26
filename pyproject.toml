@@ -37,10 +37,15 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S", "ASYNC", "C4"]
-ignore = ["S101"]  # asserts allowed in tests
+ignore = [
+    "S101",  # asserts allowed (we use them in tests and as runtime invariants)
+    "B008",  # function-call-in-default-argument — typer/FastAPI need this pattern
+    "S607",  # start-process-with-partial-path — git is by convention on PATH
+]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "B"]
+"packages/eval/mnemos_eval/runners/fixtures.py" = ["S311"]  # seeded RNG is intentional
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"

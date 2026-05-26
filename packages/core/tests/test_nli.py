@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from mnemos.contradiction.nli import NLIBaseline, NLIUnavailableError
 from mnemos.contradiction.types import ContradictionInput, Verdict
 
@@ -102,6 +101,7 @@ def test_missing_label_in_id2label_raises(monkeypatch):
     with pytest.raises(NLIUnavailableError, match="missing"):
         # bypass _ensure_loaded re-init; re-run validation manually
         from mnemos.contradiction.nli import _REQUIRED_LABELS
+
         labels = [str(b._model.config.id2label[i]).lower() for i in range(2)]
         missing = _REQUIRED_LABELS - set(labels)
         assert missing

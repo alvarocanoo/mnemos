@@ -1,11 +1,10 @@
 import math
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
-
 from mnemos.memory.decay import DecayConfig
 from mnemos.memory.eviction import (
     EvictionConfig,
@@ -80,7 +79,7 @@ def _mock_session(rows: list[_FakeRow]) -> MagicMock:
 
 
 def test_score_user_memories_orders_ascending_by_score():
-    now = datetime(2026, 5, 26, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, tzinfo=UTC)
     rows = [
         _FakeRow(uuid4(), importance=3, created_at=now - timedelta(days=1), access_count=10),
         _FakeRow(uuid4(), importance=1, created_at=now - timedelta(days=200), access_count=0),
@@ -96,7 +95,7 @@ def test_score_user_memories_orders_ascending_by_score():
 
 
 def test_select_for_eviction_returns_bottom_excess():
-    now = datetime(2026, 5, 26, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, tzinfo=UTC)
     rows = [
         _FakeRow(uuid4(), importance=3, created_at=now - timedelta(days=1), access_count=10),
         _FakeRow(uuid4(), importance=1, created_at=now - timedelta(days=200), access_count=0),
@@ -113,7 +112,7 @@ def test_select_for_eviction_returns_bottom_excess():
 
 
 def test_select_for_eviction_under_cap_returns_empty():
-    now = datetime(2026, 5, 26, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, tzinfo=UTC)
     rows = [
         _FakeRow(uuid4(), importance=2, created_at=now, access_count=0),
         _FakeRow(uuid4(), importance=2, created_at=now, access_count=0),
@@ -123,7 +122,7 @@ def test_select_for_eviction_under_cap_returns_empty():
 
 
 def test_select_for_eviction_max_count_zero_evicts_all():
-    now = datetime(2026, 5, 26, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, tzinfo=UTC)
     rows = [
         _FakeRow(uuid4(), importance=2, created_at=now, access_count=0),
         _FakeRow(uuid4(), importance=3, created_at=now, access_count=10),
@@ -138,7 +137,7 @@ def test_select_for_eviction_negative_max_count_raises():
 
 
 def test_recency_weight_visible_in_scored_memory():
-    now = datetime(2026, 5, 26, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, tzinfo=UTC)
     rows = [
         _FakeRow(uuid4(), importance=2, created_at=now - timedelta(days=30), access_count=0),
     ]

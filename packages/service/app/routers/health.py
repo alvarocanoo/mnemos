@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import text
-from sqlalchemy.orm import Session
-
 from mnemos.config import Settings, get_settings
 from mnemos.storage.qdrant import get_client
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.deps import SessionDep
 

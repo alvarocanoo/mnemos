@@ -1,5 +1,5 @@
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from mnemos.memory.decay import DecayConfig, age_in_days, decay_weight
 
@@ -36,18 +36,18 @@ def test_lambda_for_clamps_to_low_high():
 
 
 def test_age_in_days_handles_naive_datetime():
-    now = datetime(2026, 5, 26, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, tzinfo=UTC)
     created_naive = datetime(2026, 5, 24)  # no tz
     assert math.isclose(age_in_days(created_naive, now=now), 2.0, abs_tol=1e-6)
 
 
 def test_age_in_days_with_explicit_now():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     created = now - timedelta(days=10, hours=12)
     assert math.isclose(age_in_days(created, now=now), 10.5, abs_tol=1e-3)
 
 
 def test_age_clamped_at_zero_when_future():
-    now = datetime(2026, 5, 26, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, tzinfo=UTC)
     future = now + timedelta(days=3)
     assert age_in_days(future, now=now) == 0.0

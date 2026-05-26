@@ -10,9 +10,7 @@ class Verdict(StrEnum):
     PARAPHRASE = "paraphrase"
 
 
-POSITIVE_VERDICTS: frozenset[Verdict] = frozenset(
-    {Verdict.CONTRADICTS, Verdict.SUPERSEDES}
-)
+POSITIVE_VERDICTS: frozenset[Verdict] = frozenset({Verdict.CONTRADICTS, Verdict.SUPERSEDES})
 
 
 class ContradictionInput(BaseModel):

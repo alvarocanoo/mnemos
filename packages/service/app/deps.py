@@ -2,12 +2,11 @@ from collections.abc import Generator
 from functools import lru_cache
 
 from fastapi import Depends
-from sqlalchemy.orm import Session
-
 from mnemos.config import Settings, get_settings
 from mnemos.embeddings.bge_m3 import DenseEmbedder
 from mnemos.embeddings.bm25 import SparseEmbedder
 from mnemos.storage.postgres import get_session as _get_session
+from sqlalchemy.orm import Session
 
 
 @lru_cache(maxsize=1)

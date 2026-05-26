@@ -1,11 +1,7 @@
+from functools import lru_cache
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
-
-from functools import lru_cache
-
 from mnemos.config import Settings
 from mnemos.contradiction.judge import (
     ContradictionJudge,
@@ -14,6 +10,8 @@ from mnemos.contradiction.judge import (
 from mnemos.contradiction.nli import NLIBaseline, NLIUnavailableError
 from mnemos.contradiction.types import ContradictionInput, ContradictionResult
 from mnemos.memory.ops import read_memory_by_id
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from app.deps import SessionDep, SettingsDep
 
