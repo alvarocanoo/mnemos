@@ -24,6 +24,7 @@ _CONTRADICTION_COLUMNS = [
     "git_sha",
     "dataset",
     "n",
+    "judge_kind",
     "judge_model",
     "accuracy",
     "contradiction_f1",

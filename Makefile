@@ -14,6 +14,8 @@ help:
 	@echo "  make eval-hybrid     run mnemos-eval (hybrid BM25+dense RRF) row"
 	@echo "  make eval-compare    run BOTH modes back-to-back for side-by-side leaderboard"
 	@echo "  make eval-contradiction  run LLM-judge on contradiction_v0.jsonl (needs ANTHROPIC_API_KEY)"
+	@echo "  make eval-nli            run NLI baseline (DeBERTa) on contradiction_v0.jsonl (no API key needed)"
+	@echo "  make eval-compare-judges run LLM-judge AND NLI baseline back-to-back for the gap"
 	@echo "  make test            run pytest"
 	@echo "  make lint            run ruff check"
 	@echo "  make demo            (v0.5) open dashboard at http://localhost:3000"
@@ -67,6 +69,22 @@ eval-compare:
 
 eval-contradiction:
 	uv run mnemos-eval contradiction \
+		--dataset packages/eval/mnemos_eval/datasets/contradiction_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs \
+		--judge llm
+
+eval-nli:
+	uv run mnemos-eval contradiction \
+		--dataset packages/eval/mnemos_eval/datasets/contradiction_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs \
+		--judge nli
+
+eval-compare-judges:
+	uv run mnemos-eval compare-judges \
 		--dataset packages/eval/mnemos_eval/datasets/contradiction_v0.jsonl \
 		--service-url http://localhost:8000 \
 		--leaderboard leaderboard.md \

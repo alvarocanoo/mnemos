@@ -50,6 +50,14 @@ class Settings(BaseSettings):
         default=None,
         description="Anthropic API key. Falls back to ANTHROPIC_API_KEY env var.",
     )
+    nli_model: str = Field(
+        default="cross-encoder/nli-deberta-v3-base",
+        description="HF model id for the NLI baseline judge.",
+    )
+    nli_threshold: float = Field(
+        default=0.5,
+        description="Probability threshold for the NLI baseline verdicts.",
+    )
 
 
 def get_settings() -> Settings:

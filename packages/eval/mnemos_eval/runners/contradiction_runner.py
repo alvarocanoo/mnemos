@@ -9,12 +9,20 @@ from mnemos_eval.metrics.contradiction import collapsed_positive_f1, per_class_b
 from mnemos_eval.runners.fixtures import load_jsonl
 
 
-def _call_judge(client: httpx.Client, case: dict[str, Any]) -> tuple[str, float]:
+_ENDPOINT_BY_JUDGE = {
+    "llm": "/contradiction/detect",
+    "nli": "/contradiction/baseline",
+}
+
+
+def _call_judge(
+    client: httpx.Client, case: dict[str, Any], endpoint: str
+) -> tuple[str, float]:
     t0 = time.perf_counter()
     resp = client.post(
-        "/contradiction/detect",
+        endpoint,
         json={"memory_a": case["memory_a"], "memory_b": case["memory_b"]},
-        timeout=120.0,
+        timeout=180.0,
     )
     elapsed_ms = (time.perf_counter() - t0) * 1000
     resp.raise_for_status()
@@ -26,7 +34,13 @@ def run_contradiction_suite(
     service_url: str,
     *,
     judge_model: str = "claude-haiku-4-5",
+    judge_kind: str = "llm",
 ) -> dict[str, Any]:
+    if judge_kind not in _ENDPOINT_BY_JUDGE:
+        raise ValueError(
+            f"judge_kind must be one of {sorted(_ENDPOINT_BY_JUDGE)}, got {judge_kind!r}"
+        )
+    endpoint = _ENDPOINT_BY_JUDGE[judge_kind]
     cases = load_jsonl(dataset_path)
     if not cases:
         raise ValueError(f"Dataset {dataset_path} is empty")
@@ -40,7 +54,7 @@ def run_contradiction_suite(
         for case in cases:
             if case.get("task_type") != "contradiction":
                 continue
-            verdict, latency_ms = _call_judge(client, case)
+            verdict, latency_ms = _call_judge(client, case, endpoint)
             gold_verdict = case["gold"]["verdict"]
             predicted.append(verdict)
             gold.append(gold_verdict)
@@ -67,6 +81,7 @@ def run_contradiction_suite(
         "n": n,
         "dataset": dataset_path.name,
         "task_type": "contradiction",
+        "judge_kind": judge_kind,
         "judge_model": judge_model,
         "accuracy": collapsed["accuracy"],
         "contradiction_f1": collapsed["f1"],

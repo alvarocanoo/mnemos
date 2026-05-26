@@ -4,11 +4,14 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from functools import lru_cache
+
 from mnemos.config import Settings
 from mnemos.contradiction.judge import (
     ContradictionJudge,
     JudgeUnavailableError,
 )
+from mnemos.contradiction.nli import NLIBaseline, NLIUnavailableError
 from mnemos.contradiction.types import ContradictionInput, ContradictionResult
 from mnemos.memory.ops import read_memory_by_id
 
@@ -35,10 +38,29 @@ def _judge(settings: Settings) -> ContradictionJudge:
     )
 
 
+@lru_cache(maxsize=1)
+def _nli_singleton(model_name: str, threshold: float) -> NLIBaseline:
+    return NLIBaseline(model_name=model_name, threshold=threshold)
+
+
+def _baseline(settings: Settings) -> NLIBaseline:
+    return _nli_singleton(settings.nli_model, settings.nli_threshold)
+
+
 def _call_judge(judge: ContradictionJudge, payload: ContradictionInput) -> ContradictionResult:
     try:
         return judge.judge(payload)
     except JudgeUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+
+def _call_baseline(baseline: NLIBaseline, payload: ContradictionInput) -> ContradictionResult:
+    try:
+        return baseline.judge(payload)
+    except NLIUnavailableError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
@@ -69,4 +91,20 @@ def detect_by_ids(
     return _call_judge(
         _judge(settings),
         ContradictionInput(memory_a=a.content, memory_b=b.content),
+    )
+
+
+@router.post("/baseline", response_model=ContradictionResult)
+def detect_baseline(
+    payload: DetectByText,
+    settings: Settings = SettingsDep,
+) -> ContradictionResult:
+    """NLI baseline (cross-encoder/nli-deberta-v3-base, bidirectional).
+
+    No API key needed; runs entirely locally. Used to report the gap
+    between a small specialized classifier and the LLM judge.
+    """
+    return _call_baseline(
+        _baseline(settings),
+        ContradictionInput(memory_a=payload.memory_a, memory_b=payload.memory_b),
     )
