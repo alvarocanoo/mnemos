@@ -3,6 +3,8 @@ name = "mnemos-eval"
 version = "0.0.1"
 description = "mnemos-bench: dataset, runner, metrics, leaderboard for agent memory eval"
 requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [{ name = "Álvaro Cano" }]
 dependencies = [
     "mnemos-core",
     "httpx>=0.28",

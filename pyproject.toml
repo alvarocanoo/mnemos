@@ -3,6 +3,9 @@ name = "mnemos-monorepo"
 version = "0.0.1"
 description = "mnemos workspace root — agent memory system with reproducible eval framework"
 requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Álvaro Cano" }]
 dependencies = [
     "mnemos-core",
     "mnemos-service",
@@ -21,6 +24,7 @@ dev = [
 
 [tool.uv.workspace]
 members = ["packages/*"]
+exclude = ["packages/dashboard"]
 
 [tool.uv.sources]
 mnemos-core = { workspace = true }

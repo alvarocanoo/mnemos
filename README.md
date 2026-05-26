@@ -311,7 +311,7 @@ Hard rule: cutoffs cut scope, never extend dates. Where reality forced a scope c
 
 ## License
 
-TBD (Apache-2.0 or MIT). To be decided before v1.0 is announced publicly.
+[Apache License 2.0](LICENSE). Copyright (c) 2026 Álvaro Cano. The Apache choice is deliberate: it includes a patent grant that protects downstream users and employers who may adopt the code, which the MIT license does not.
 
 ---
 

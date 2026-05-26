@@ -3,6 +3,8 @@ name = "mnemos-service"
 version = "0.0.1"
 description = "FastAPI HTTP service exposing mnemos-core"
 requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [{ name = "Álvaro Cano" }]
 dependencies = [
     "mnemos-core",
     "fastapi>=0.115",
