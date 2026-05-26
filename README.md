@@ -3,7 +3,7 @@
 > Agent memory system with a public, reproducible evaluation framework.
 > Hybrid retrieval, contradiction detection, configurable temporal decay, importance-weighted eviction — all measurable from a single `make eval` command.
 
-**Status**: v0.5 partial — hybrid retrieval (BM25 + dense + RRF), precision@k, contradiction detection (LLM-judge Claude Haiku 4.5 + NLI baseline DeBERTa-v3 with `compare-judges` gap measurement) landed; temporal decay, eviction, dashboard pending. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
+**Status**: v0.5 partial — hybrid retrieval (BM25 + dense + RRF), precision@k, contradiction detection (LLM-judge Claude Haiku 4.5 + NLI baseline DeBERTa-v3 with `compare-judges` gap measurement), and temporal decay (exp per-tier with `compare-decay` gap) landed; eviction, dashboard pending. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
 
 ---
 
@@ -64,6 +64,8 @@ curl -X POST http://localhost:8000/contradiction/baseline `
 ```
 
 For `make eval-contradiction` and the `/contradiction/detect` endpoint, set `ANTHROPIC_API_KEY` in the host shell before `make up` (docker-compose passes it through). The NLI baseline (`/contradiction/baseline`, `make eval-nli`) runs entirely locally, no API key needed. Use `make eval-compare-judges` to measure the gap between the two on `contradiction_v0.jsonl`.
+
+For temporal eval, `make eval-temporal` ingests memories with simulated ages (the runner sets `created_at` via the `MemoryWrite` override) and measures `temporal_consistency` (fraction of cases where the current-truth memory ranks above the superseded one in top-5). `make eval-compare-decay` runs the same suite with decay OFF and ON to quantify the lift.
 
 ---
 

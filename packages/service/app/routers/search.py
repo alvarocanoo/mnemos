@@ -32,6 +32,7 @@ def search_dense_endpoint(
         query=payload.query,
         user_id=payload.user_id,
         limit=payload.limit,
+        apply_decay=payload.apply_decay,
     )
 
 
@@ -52,4 +53,5 @@ def search_hybrid_endpoint(
         user_id=payload.user_id,
         limit=payload.limit,
         prefetch_limit=settings.rrf_prefetch_limit,
+        apply_decay=payload.apply_decay,
     )

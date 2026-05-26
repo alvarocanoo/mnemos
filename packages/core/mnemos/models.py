@@ -10,6 +10,14 @@ class MemoryWrite(BaseModel):
     importance: int = Field(default=2, ge=1, le=3, description="1=low, 2=normal, 3=high")
     user_id: str = Field(default="default", max_length=128)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime | None = Field(
+        default=None,
+        description=(
+            "Optional override of the creation timestamp. Used by the eval suite "
+            "to simulate aged memories for temporal_update cases; in production "
+            "this should be left None so the DB default (now()) wins."
+        ),
+    )
 
 
 class Memory(BaseModel):
@@ -35,3 +43,7 @@ class SearchQuery(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000)
     user_id: str = Field(default="default", max_length=128)
     limit: int = Field(default=10, ge=1, le=100)
+    apply_decay: bool | None = Field(
+        default=None,
+        description="Override the server default for temporal decay weighting.",
+    )

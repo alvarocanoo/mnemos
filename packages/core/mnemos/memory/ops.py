@@ -33,12 +33,16 @@ def write_memory(
     settings: Settings,
     payload: MemoryWrite,
 ) -> Memory:
-    row = MemoryRow(
-        content=payload.content,
-        importance=payload.importance,
-        user_id=payload.user_id,
-        extra=payload.metadata,
-    )
+    row_kwargs: dict = {
+        "content": payload.content,
+        "importance": payload.importance,
+        "user_id": payload.user_id,
+        "extra": payload.metadata,
+    }
+    if payload.created_at is not None:
+        row_kwargs["created_at"] = payload.created_at
+        row_kwargs["updated_at"] = payload.created_at
+    row = MemoryRow(**row_kwargs)
     session.add(row)
     session.commit()
     session.refresh(row)

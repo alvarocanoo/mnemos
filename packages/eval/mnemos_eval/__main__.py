@@ -11,10 +11,12 @@ from mnemos.config import get_settings
 from mnemos_eval.report.leaderboard import (
     append_contradiction_row,
     append_row,
+    append_temporal_row,
     now_iso,
 )
 from mnemos_eval.runners.contradiction_runner import run_contradiction_suite
 from mnemos_eval.runners.run_suite import _git_sha, run_suite
+from mnemos_eval.runners.temporal_runner import run_temporal_suite
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 console = Console()
@@ -247,6 +249,97 @@ def compare_judges(
             str(s["p50_ms"]),
         )
     console.print(cmp_table)
+
+
+@app.command()
+def temporal(
+    dataset: Path = typer.Option(
+        Path(__file__).parent / "datasets" / "temporal_v0.jsonl",
+        "--dataset",
+        "-d",
+        help="JSONL with task_type=temporal_update cases.",
+    ),
+    service_url: str = typer.Option("http://localhost:8000", "--service-url", "-s"),
+    leaderboard: Path = typer.Option(Path.cwd() / "leaderboard.md", "--leaderboard", "-l"),
+    runs_dir: Path = typer.Option(Path.cwd() / "eval-runs", "--runs-dir"),
+    mode: str = typer.Option("hybrid", "--mode", "-m", help="dense or hybrid"),
+    apply_decay: bool = typer.Option(
+        True, "--apply-decay/--no-decay", help="Toggle temporal decay weighting."
+    ),
+    k: int = typer.Option(5, "--k", help="Window for the consistency check."),
+) -> None:
+    """Ingest temporal_update cases with simulated ages, query, compute temporal_consistency."""
+    if mode not in {"dense", "hybrid"}:
+        raise typer.BadParameter("--mode must be 'dense' or 'hybrid'")
+
+    settings = get_settings()
+    result = run_temporal_suite(
+        dataset_path=dataset,
+        service_url=service_url,
+        mode=mode,  # type: ignore[arg-type]
+        apply_decay=apply_decay,
+        embed_model=settings.embedding_model,
+        k=k,
+    )
+    summary = result["summary"]
+    git_sha = _git_sha(Path.cwd())
+    summary["git_sha"] = git_sha
+    summary["timestamp"] = now_iso()
+
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    suffix = "decay" if apply_decay else "nodecay"
+    run_path = (
+        runs_dir
+        / f"eval_temporal_{mode}_{suffix}_{git_sha}_{summary['timestamp'].replace(':', '-')}.json"
+    )
+    run_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    append_temporal_row(leaderboard, summary)
+
+    table = Table(
+        title=f"mnemos-eval temporal — {summary['dataset']} "
+        f"(mode={mode}, decay={apply_decay}, n={summary['n']})"
+    )
+    for col in ["temporal_consistency", "p50_ms", "p95_ms"]:
+        table.add_column(col, justify="right")
+    table.add_row(str(summary["temporal_consistency"]), str(summary["p50_ms"]), str(summary["p95_ms"]))
+    console.print(table)
+    console.print(f"Wrote leaderboard row to [bold]{leaderboard}[/]")
+    console.print(f"Wrote full run to     [bold]{run_path}[/]")
+    misses = [c for c in result["per_case"] if c["score"] == 0]
+    if misses:
+        console.print(f"\n[bold]Misses ({len(misses)}):[/]")
+        for m in misses:
+            console.print(
+                f"  {m['id']}: current_pos={m['current_pos']} "
+                f"superseded_pos={m['superseded_pos']}"
+            )
+
+
+@app.command("compare-decay")
+def compare_decay(
+    dataset: Path = typer.Option(
+        Path(__file__).parent / "datasets" / "temporal_v0.jsonl",
+        "--dataset",
+        "-d",
+    ),
+    service_url: str = typer.Option("http://localhost:8000", "--service-url", "-s"),
+    leaderboard: Path = typer.Option(Path.cwd() / "leaderboard.md", "--leaderboard", "-l"),
+    runs_dir: Path = typer.Option(Path.cwd() / "eval-runs", "--runs-dir"),
+    mode: str = typer.Option("hybrid", "--mode", "-m"),
+) -> None:
+    """Run the temporal suite twice: with decay ON and with decay OFF. Report the gap."""
+    if mode not in {"dense", "hybrid"}:
+        raise typer.BadParameter("--mode must be 'dense' or 'hybrid'")
+    for apply in (False, True):
+        temporal(
+            dataset=dataset,
+            service_url=service_url,
+            leaderboard=leaderboard,
+            runs_dir=runs_dir,
+            mode=mode,
+            apply_decay=apply,
+            k=5,
+        )
 
 
 if __name__ == "__main__":

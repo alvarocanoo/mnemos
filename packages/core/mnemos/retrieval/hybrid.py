@@ -3,10 +3,19 @@ from sqlalchemy.orm import Session
 from mnemos.config import Settings
 from mnemos.embeddings.bge_m3 import DenseEmbedder
 from mnemos.embeddings.bm25 import SparseEmbedder
+from mnemos.memory.decay import DecayConfig, age_in_days, decay_weight
 from mnemos.memory.ops import row_to_model
 from mnemos.models import SearchHit
 from mnemos.storage.postgres import MemoryRow
 from mnemos.storage.qdrant import hybrid_search as hybrid_query
+
+
+def _decay_cfg(settings: Settings) -> DecayConfig:
+    return DecayConfig(
+        lambda_low=settings.decay_lambda_low,
+        lambda_normal=settings.decay_lambda_normal,
+        lambda_high=settings.decay_lambda_high,
+    )
 
 
 def hybrid_search(
@@ -18,16 +27,20 @@ def hybrid_search(
     user_id: str = "default",
     limit: int = 10,
     prefetch_limit: int = 50,
+    apply_decay: bool | None = None,
 ) -> list[SearchHit]:
     dense_vec = dense_embedder.embed_one(query)
     sparse_vec = sparse_embedder.embed_one(query)
+
+    apply = settings.apply_decay if apply_decay is None else apply_decay
+    overfetch = limit * 3 if apply else limit
 
     hits = hybrid_query(
         settings,
         dense_query=dense_vec,
         sparse_query=sparse_vec,
         user_id=user_id,
-        limit=limit,
+        limit=overfetch,
         prefetch_limit=prefetch_limit,
     )
     if not hits:
@@ -39,8 +52,13 @@ def hybrid_search(
         .filter(MemoryRow.id.in_(id_to_score.keys()))
         .all()
     )
-    results = [
-        SearchHit(memory=row_to_model(row), score=id_to_score[row.id]) for row in rows
-    ]
+
+    cfg = _decay_cfg(settings) if apply else None
+    results: list[SearchHit] = []
+    for row in rows:
+        score = id_to_score[row.id]
+        if apply and cfg is not None:
+            score *= decay_weight(row.importance, age_in_days(row.created_at), cfg)
+        results.append(SearchHit(memory=row_to_model(row), score=score))
     results.sort(key=lambda h: h.score, reverse=True)
-    return results
+    return results[:limit]

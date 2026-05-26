@@ -16,6 +16,8 @@ help:
 	@echo "  make eval-contradiction  run LLM-judge on contradiction_v0.jsonl (needs ANTHROPIC_API_KEY)"
 	@echo "  make eval-nli            run NLI baseline (DeBERTa) on contradiction_v0.jsonl (no API key needed)"
 	@echo "  make eval-compare-judges run LLM-judge AND NLI baseline back-to-back for the gap"
+	@echo "  make eval-temporal       run temporal_consistency on temporal_v0.jsonl (decay ON)"
+	@echo "  make eval-compare-decay  run temporal suite with decay OFF and ON for the gap"
 	@echo "  make test            run pytest"
 	@echo "  make lint            run ruff check"
 	@echo "  make demo            (v0.5) open dashboard at http://localhost:3000"
@@ -89,6 +91,23 @@ eval-compare-judges:
 		--service-url http://localhost:8000 \
 		--leaderboard leaderboard.md \
 		--runs-dir eval-runs
+
+eval-temporal:
+	uv run mnemos-eval temporal \
+		--dataset packages/eval/mnemos_eval/datasets/temporal_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs \
+		--mode hybrid \
+		--apply-decay
+
+eval-compare-decay:
+	uv run mnemos-eval compare-decay \
+		--dataset packages/eval/mnemos_eval/datasets/temporal_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs \
+		--mode hybrid
 
 test:
 	uv run pytest

@@ -59,6 +59,14 @@ class Settings(BaseSettings):
         description="Probability threshold for the NLI baseline verdicts.",
     )
 
+    apply_decay: bool = Field(
+        default=True,
+        description="Multiply retrieval scores by exp(-λ_i · Δt) before final ranking.",
+    )
+    decay_lambda_low: float = Field(default=0.05, description="λ for importance=1 memories.")
+    decay_lambda_normal: float = Field(default=0.02, description="λ for importance=2 memories.")
+    decay_lambda_high: float = Field(default=0.005, description="λ for importance=3 memories.")
+
 
 def get_settings() -> Settings:
     return Settings()
