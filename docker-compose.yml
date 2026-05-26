@@ -1,0 +1,52 @@
+# mnemos — local stack
+# Stub for week 0. Service + dashboard get added in v0.1.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: mnemos-postgres
+    environment:
+      POSTGRES_USER: mnemos
+      POSTGRES_PASSWORD: mnemos
+      POSTGRES_DB: mnemos
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mnemos -d mnemos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mnemos-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:6333/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # service:    # v0.1
+  #   build: ./packages/service
+  #   depends_on:
+  #     postgres: { condition: service_healthy }
+  #     qdrant:   { condition: service_healthy }
+  #   ports:
+  #     - "8000:8000"
+
+  # dashboard:  # v0.5
+  #   build: ./packages/dashboard
+  #   depends_on: [service]
+  #   ports:
+  #     - "3000:3000"
+
+volumes:
+  postgres-data:
+  qdrant-data:
