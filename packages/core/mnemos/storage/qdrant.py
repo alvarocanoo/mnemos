@@ -4,6 +4,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models as qm
 
 from mnemos.config import Settings
+from mnemos.embeddings.bm25 import SparseVec
 
 
 _DENSE_VECTOR_NAME = "dense"
@@ -65,6 +66,37 @@ def upsert_dense(
     )
 
 
+def upsert_point(
+    settings: Settings,
+    memory_id: UUID,
+    dense: list[float],
+    sparse: SparseVec,
+    payload: dict,
+) -> None:
+    client = get_client()
+    client.upsert(
+        collection_name=settings.qdrant_collection,
+        points=[
+            qm.PointStruct(
+                id=str(memory_id),
+                vector={
+                    _DENSE_VECTOR_NAME: dense,
+                    _SPARSE_VECTOR_NAME: qm.SparseVector(
+                        indices=sparse.indices, values=sparse.values
+                    ),
+                },
+                payload=payload,
+            )
+        ],
+    )
+
+
+def _user_filter(user_id: str) -> qm.Filter:
+    return qm.Filter(
+        must=[qm.FieldCondition(key="user_id", match=qm.MatchValue(value=user_id))]
+    )
+
+
 def search_dense(
     settings: Settings,
     query_vector: list[float],
@@ -76,9 +108,65 @@ def search_dense(
         collection_name=settings.qdrant_collection,
         query=query_vector,
         using=_DENSE_VECTOR_NAME,
-        query_filter=qm.Filter(
-            must=[qm.FieldCondition(key="user_id", match=qm.MatchValue(value=user_id))]
-        ),
+        query_filter=_user_filter(user_id),
+        limit=limit,
+        with_payload=False,
+    )
+    return [(UUID(str(point.id)), float(point.score)) for point in response.points]
+
+
+def search_sparse(
+    settings: Settings,
+    query: SparseVec,
+    user_id: str,
+    limit: int,
+) -> list[tuple[UUID, float]]:
+    client = get_client()
+    response = client.query_points(
+        collection_name=settings.qdrant_collection,
+        query=qm.SparseVector(indices=query.indices, values=query.values),
+        using=_SPARSE_VECTOR_NAME,
+        query_filter=_user_filter(user_id),
+        limit=limit,
+        with_payload=False,
+    )
+    return [(UUID(str(point.id)), float(point.score)) for point in response.points]
+
+
+def hybrid_search(
+    settings: Settings,
+    dense_query: list[float],
+    sparse_query: SparseVec,
+    user_id: str,
+    limit: int,
+    prefetch_limit: int = 50,
+) -> list[tuple[UUID, float]]:
+    """Run RRF fusion over dense + sparse prefetch results.
+
+    `prefetch_limit` is how many candidates each retriever returns before
+    fusion. Qdrant docs recommend prefetch_limit > limit so fusion has
+    enough material; 50 is a reasonable v0.5 default — tune via eval.
+    """
+    client = get_client()
+    response = client.query_points(
+        collection_name=settings.qdrant_collection,
+        prefetch=[
+            qm.Prefetch(
+                query=dense_query,
+                using=_DENSE_VECTOR_NAME,
+                limit=prefetch_limit,
+                filter=_user_filter(user_id),
+            ),
+            qm.Prefetch(
+                query=qm.SparseVector(
+                    indices=sparse_query.indices, values=sparse_query.values
+                ),
+                using=_SPARSE_VECTOR_NAME,
+                limit=prefetch_limit,
+                filter=_user_filter(user_id),
+            ),
+        ],
+        query=qm.FusionQuery(fusion=qm.Fusion.RRF),
         limit=limit,
         with_payload=False,
     )

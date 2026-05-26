@@ -24,11 +24,19 @@ class Settings(BaseSettings):
     )
     embedding_model: str = Field(
         default="BAAI/bge-m3",
-        description="fastembed-compatible model id. bge-small-en-v1.5 for fast mode.",
+        description="fastembed-compatible dense model id. bge-small-en-v1.5 for fast mode.",
     )
     embedding_dim: int = Field(
         default=1024,
         description="Dense embedding dimension. Must match model. BGE-M3=1024, bge-small=384.",
+    )
+    sparse_model: str = Field(
+        default="Qdrant/bm25",
+        description="fastembed-compatible sparse model id. v0.5 uses BM25.",
+    )
+    rrf_prefetch_limit: int = Field(
+        default=50,
+        description="How many candidates each retriever returns before RRF fusion.",
     )
     judge_model: str = Field(
         default="claude-haiku-4-5",

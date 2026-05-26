@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from mnemos.config import Settings
 from mnemos.embeddings.bge_m3 import DenseEmbedder
+from mnemos.embeddings.bm25 import SparseEmbedder
 from mnemos.memory.ops import (
     delete_memory,
     list_memories,
@@ -14,7 +15,7 @@ from mnemos.memory.ops import (
 from mnemos.models import Memory, MemoryWrite
 from mnemos.storage.qdrant import delete_point
 
-from app.deps import EmbedderDep, SessionDep, SettingsDep
+from app.deps import DenseEmbedderDep, SessionDep, SettingsDep, SparseEmbedderDep
 
 router = APIRouter(prefix="/memories", tags=["memories"])
 
@@ -23,10 +24,11 @@ router = APIRouter(prefix="/memories", tags=["memories"])
 def create_memory(
     payload: MemoryWrite,
     session: Session = SessionDep,
-    embedder: DenseEmbedder = EmbedderDep,
+    dense: DenseEmbedder = DenseEmbedderDep,
+    sparse: SparseEmbedder = SparseEmbedderDep,
     settings: Settings = SettingsDep,
 ) -> Memory:
-    return write_memory(session, embedder, settings, payload)
+    return write_memory(session, dense, sparse, settings, payload)
 
 
 @router.get("/{memory_id}", response_model=Memory)

@@ -6,9 +6,10 @@ from sqlalchemy.orm import Session
 
 from mnemos.config import Settings
 from mnemos.embeddings.bge_m3 import DenseEmbedder
+from mnemos.embeddings.bm25 import SparseEmbedder
 from mnemos.models import Memory, MemoryWrite
 from mnemos.storage.postgres import MemoryRow
-from mnemos.storage.qdrant import delete_point, upsert_dense
+from mnemos.storage.qdrant import delete_point, upsert_point
 
 
 def row_to_model(row: MemoryRow) -> Memory:
@@ -27,7 +28,8 @@ def row_to_model(row: MemoryRow) -> Memory:
 
 def write_memory(
     session: Session,
-    embedder: DenseEmbedder,
+    dense_embedder: DenseEmbedder,
+    sparse_embedder: SparseEmbedder,
     settings: Settings,
     payload: MemoryWrite,
 ) -> Memory:
@@ -41,11 +43,13 @@ def write_memory(
     session.commit()
     session.refresh(row)
 
-    vector = embedder.embed_one(payload.content)
-    upsert_dense(
+    dense_vec = dense_embedder.embed_one(payload.content)
+    sparse_vec = sparse_embedder.embed_one(payload.content)
+    upsert_point(
         settings,
         row.id,
-        vector,
+        dense=dense_vec,
+        sparse=sparse_vec,
         payload={"user_id": row.user_id, "importance": row.importance},
     )
 

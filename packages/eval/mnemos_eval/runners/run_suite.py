@@ -2,12 +2,15 @@ import statistics
 import subprocess
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 
+from mnemos_eval.metrics.precision import precision_at_k
 from mnemos_eval.metrics.recall import recall_at_k
 from mnemos_eval.runners.fixtures import load_jsonl
+
+SearchMode = Literal["dense", "hybrid"]
 
 
 def _git_sha(cwd: Path) -> str:
@@ -40,12 +43,17 @@ def _ingest_case(client: httpx.Client, case: dict[str, Any]) -> list[str]:
 
 
 def _query_case(
-    client: httpx.Client, case: dict[str, Any], limit: int = 10
+    client: httpx.Client,
+    case: dict[str, Any],
+    *,
+    mode: SearchMode,
+    limit: int = 10,
 ) -> tuple[list[str], float]:
     user_id = f"bench_{case['id']}"
+    endpoint = "/search/dense" if mode == "dense" else "/search/hybrid"
     t0 = time.perf_counter()
     resp = client.post(
-        "/search/dense",
+        endpoint,
         json={"query": case["query"], "user_id": user_id, "limit": limit},
         timeout=60.0,
     )
@@ -59,6 +67,7 @@ def run_suite(
     dataset_path: Path,
     service_url: str,
     *,
+    mode: SearchMode = "dense",
     limit: int = 10,
     embed_model: str = "BAAI/bge-m3",
 ) -> dict[str, Any]:
@@ -69,6 +78,8 @@ def run_suite(
     recalls_1: list[float] = []
     recalls_5: list[float] = []
     recalls_10: list[float] = []
+    precisions_1: list[float] = []
+    precisions_5: list[float] = []
     latencies_ms: list[float] = []
     per_case: list[dict[str, Any]] = []
 
@@ -76,14 +87,18 @@ def run_suite(
         for case in cases:
             ingested_ids = _ingest_case(client, case)
             gold_ids = [ingested_ids[i] for i in case["gold"]["memory_indices"]]
-            retrieved_ids, latency_ms = _query_case(client, case, limit=limit)
+            retrieved_ids, latency_ms = _query_case(client, case, mode=mode, limit=limit)
 
             r1 = recall_at_k(retrieved_ids, gold_ids, 1)
             r5 = recall_at_k(retrieved_ids, gold_ids, 5)
             r10 = recall_at_k(retrieved_ids, gold_ids, 10)
+            p1 = precision_at_k(retrieved_ids, gold_ids, 1)
+            p5 = precision_at_k(retrieved_ids, gold_ids, 5)
             recalls_1.append(r1)
             recalls_5.append(r5)
             recalls_10.append(r10)
+            precisions_1.append(p1)
+            precisions_5.append(p5)
             latencies_ms.append(latency_ms)
 
             per_case.append(
@@ -93,6 +108,8 @@ def run_suite(
                     "recall@1": r1,
                     "recall@5": r5,
                     "recall@10": r10,
+                    "precision@1": p1,
+                    "precision@5": p5,
                     "latency_ms": round(latency_ms, 2),
                 }
             )
@@ -101,10 +118,13 @@ def run_suite(
     summary = {
         "n": n,
         "dataset": dataset_path.name,
+        "mode": mode,
         "embed_model": embed_model,
         "recall@1": round(sum(recalls_1) / n, 3),
         "recall@5": round(sum(recalls_5) / n, 3),
         "recall@10": round(sum(recalls_10) / n, 3),
+        "precision@1": round(sum(precisions_1) / n, 3),
+        "precision@5": round(sum(precisions_5) / n, 3),
         "p50_ms": round(statistics.median(latencies_ms), 1),
         "p95_ms": round(
             statistics.quantiles(latencies_ms, n=20)[18] if n >= 20 else max(latencies_ms),

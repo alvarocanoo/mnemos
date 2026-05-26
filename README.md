@@ -3,7 +3,7 @@
 > Agent memory system with a public, reproducible evaluation framework.
 > Hybrid retrieval, contradiction detection, configurable temporal decay, importance-weighted eviction — all measurable from a single `make eval` command.
 
-**Status**: v0.1 in progress — core, service, eval skeleton committed; smoke end-to-end pending Docker daemon recovery on author machine. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
+**Status**: v0.5 partial — hybrid retrieval (BM25 + dense + RRF) and precision@k landed; contradiction detection, temporal decay, eviction, dashboard pending. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
 
 ---
 
@@ -36,7 +36,8 @@ cd mnemos
 make sync               # uv sync (installs workspace + deps)
 make up                 # build + start postgres, qdrant, service
 make verify-stack       # hits /healthz on all three
-make eval               # ingests seed_v0.jsonl, computes recall@1/5/10, appends leaderboard.md
+make eval-compare       # ingest seed_v0.jsonl, run dense + hybrid, append both rows
+Get-Content leaderboard.md
 ```
 
 First `make up` builds the service image (~3-5 min on first run; subsequent rebuilds use the uv cache layer). First `make eval` downloads BGE-M3 (~2 GB) into a Docker volume; subsequent runs reuse it.
@@ -49,6 +50,9 @@ curl -X POST http://localhost:8000/memories `
   -H "Content-Type: application/json" `
   -d '{"content":"My favorite color is teal","user_id":"me"}'
 curl -X POST http://localhost:8000/search/dense `
+  -H "Content-Type: application/json" `
+  -d '{"query":"what color do I like","user_id":"me","limit":5}'
+curl -X POST http://localhost:8000/search/hybrid `
   -H "Content-Type: application/json" `
   -d '{"query":"what color do I like","user_id":"me","limit":5}'
 ```

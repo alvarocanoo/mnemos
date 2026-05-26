@@ -10,7 +10,9 @@ help:
 	@echo "  make logs            tail service logs"
 	@echo "  make verify-stack    check postgres + qdrant + service reachable"
 	@echo "  make seed            (alias for make eval — ingest happens inside the suite)"
-	@echo "  make eval            run mnemos-eval on seed_v0.jsonl, append leaderboard row"
+	@echo "  make eval            run mnemos-eval (dense mode), append leaderboard row"
+	@echo "  make eval-hybrid     run mnemos-eval (hybrid BM25+dense RRF) row"
+	@echo "  make eval-compare    run BOTH modes back-to-back for side-by-side leaderboard"
 	@echo "  make test            run pytest"
 	@echo "  make lint            run ruff check"
 	@echo "  make demo            (v0.5) open dashboard at http://localhost:3000"
@@ -41,6 +43,22 @@ seed: eval
 
 eval:
 	uv run mnemos-eval run \
+		--dataset packages/eval/mnemos_eval/datasets/seed_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs \
+		--mode dense
+
+eval-hybrid:
+	uv run mnemos-eval run \
+		--dataset packages/eval/mnemos_eval/datasets/seed_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs \
+		--mode hybrid
+
+eval-compare:
+	uv run mnemos-eval compare \
 		--dataset packages/eval/mnemos_eval/datasets/seed_v0.jsonl \
 		--service-url http://localhost:8000 \
 		--leaderboard leaderboard.md \
