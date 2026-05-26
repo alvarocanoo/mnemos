@@ -32,6 +32,19 @@ _TEMPORAL_COLUMNS = [
     "p95_ms",
 ]
 
+_ABSTENTION_COLUMNS = [
+    "timestamp",
+    "git_sha",
+    "dataset",
+    "mode",
+    "score_threshold",
+    "n",
+    "embed_model",
+    "abstention_rate",
+    "p50_ms",
+    "p95_ms",
+]
+
 _CONTRADICTION_COLUMNS = [
     "timestamp",
     "git_sha",
@@ -57,6 +70,7 @@ def _make_header(columns: list[str]) -> str:
 _HEADER = _make_header(_COLUMNS)
 _CONTRADICTION_HEADER = _make_header(_CONTRADICTION_COLUMNS)
 _TEMPORAL_HEADER = _make_header(_TEMPORAL_COLUMNS)
+_ABSTENTION_HEADER = _make_header(_ABSTENTION_COLUMNS)
 
 
 def _append_with_schema(path: Path, columns: list[str], header: str, row: dict[str, Any]) -> None:
@@ -93,6 +107,10 @@ def append_contradiction_row(path: Path, row: dict[str, Any]) -> None:
 
 def append_temporal_row(path: Path, row: dict[str, Any]) -> None:
     _append_with_schema(path, _TEMPORAL_COLUMNS, _TEMPORAL_HEADER, row)
+
+
+def append_abstention_row(path: Path, row: dict[str, Any]) -> None:
+    _append_with_schema(path, _ABSTENTION_COLUMNS, _ABSTENTION_HEADER, row)
 
 
 def now_iso() -> str:

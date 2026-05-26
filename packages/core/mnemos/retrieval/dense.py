@@ -25,6 +25,7 @@ def dense_search(
     user_id: str = "default",
     limit: int = 10,
     apply_decay: bool | None = None,
+    score_threshold: float | None = None,
 ) -> list[SearchHit]:
     query_vector = embedder.embed_one(query)
     apply = settings.apply_decay if apply_decay is None else apply_decay
@@ -48,4 +49,6 @@ def dense_search(
             score *= decay_weight(row.importance, age_in_days(row.created_at), cfg)
         results.append(SearchHit(memory=row_to_model(row), score=score))
     results.sort(key=lambda h: h.score, reverse=True)
+    if score_threshold is not None:
+        results = [h for h in results if h.score >= score_threshold]
     return results[:limit]

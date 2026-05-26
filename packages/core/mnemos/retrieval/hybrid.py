@@ -28,6 +28,7 @@ def hybrid_search(
     limit: int = 10,
     prefetch_limit: int = 50,
     apply_decay: bool | None = None,
+    score_threshold: float | None = None,
 ) -> list[SearchHit]:
     dense_vec = dense_embedder.embed_one(query)
     sparse_vec = sparse_embedder.embed_one(query)
@@ -61,4 +62,6 @@ def hybrid_search(
             score *= decay_weight(row.importance, age_in_days(row.created_at), cfg)
         results.append(SearchHit(memory=row_to_model(row), score=score))
     results.sort(key=lambda h: h.score, reverse=True)
+    if score_threshold is not None:
+        results = [h for h in results if h.score >= score_threshold]
     return results[:limit]

@@ -1,6 +1,16 @@
 # `mnemos-bench` dataset schema
 
-Each line in `*.jsonl` is one test case. v0.1 ships only `single_hop_recall`; future versions add `multi_session`, `temporal_update`, `contradiction`, `abstention`.
+Each line in `*.jsonl` is one test case. v1 ships all five task types:
+
+| task_type | runner | metric | file |
+|---|---|---|---|
+| `single_hop_recall` | `mnemos-eval run` | recall@k, precision@k | `seed_v0.jsonl` (20) |
+| `multi_session_reasoning` | `mnemos-eval run` | recall@k, precision@k | `multi_session_v0.jsonl` (15) |
+| `contradiction` | `mnemos-eval contradiction` | F1 vs gold verdict | `contradiction_v0.jsonl` (15) |
+| `temporal_update` | `mnemos-eval temporal` | temporal_consistency | `temporal_v0.jsonl` (10) |
+| `abstention` | `mnemos-eval abstention` | abstention_rate | `abstention_v0.jsonl` (15) |
+
+The five files concatenate into [`mnemos_bench_v1.jsonl`](mnemos_bench_v1.jsonl) (75 cases total). Each runner filters by `task_type`, so you can point any runner at the combined file or at the per-type file.
 
 ## Common fields
 
@@ -20,11 +30,35 @@ Each line in `*.jsonl` is one test case. v0.1 ships only `single_hop_recall`; fu
 | `content` | string | The memory text |
 | `importance` | int | 1=low, 2=normal, 3=high (used in v0.5+) |
 
-## `gold` shape for `single_hop_recall`
+## `gold` shape for `single_hop_recall` and `multi_session_reasoning`
 
 | Field | Type | Notes |
 |---|---|---|
 | `memory_indices` | list of int | Indices into `memories[]` that contain the answer |
+
+## `gold` shape for `contradiction`
+
+Top-level uses `memory_a` and `memory_b` (strings) instead of a `memories[]` list.
+
+| Field | Type | Notes |
+|---|---|---|
+| `verdict` | `contradicts` / `supersedes` / `independent` / `paraphrase` | Ground truth verdict |
+
+## `gold` shape for `temporal_update`
+
+`memories[i]` carries an extra `age_days` (number) and `role` (`current` / `superseded` / `distractor`).
+
+| Field | Type | Notes |
+|---|---|---|
+| `current_idx` | int | Index of the current-truth memory |
+| `superseded_idx` | int | Index of the outdated one |
+
+## `gold` shape for `abstention`
+
+| Field | Type | Notes |
+|---|---|---|
+| `memory_indices` | empty list `[]` | No memory should be returned |
+| `expected_empty` | `true` | Explicit flag for readability |
 
 ## Isolation
 

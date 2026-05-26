@@ -47,3 +47,11 @@ class SearchQuery(BaseModel):
         default=None,
         description="Override the server default for temporal decay weighting.",
     )
+    score_threshold: float | None = Field(
+        default=None,
+        ge=0.0,
+        description=(
+            "Soft abstention: filter out hits with final score below this cutoff. "
+            "Useful when the agent should return [] rather than the closest noisy match."
+        ),
+    )

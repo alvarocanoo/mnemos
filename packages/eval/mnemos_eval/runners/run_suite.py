@@ -63,6 +63,9 @@ def _query_case(
     return [hit["memory"]["id"] for hit in hits], elapsed_ms
 
 
+_RETRIEVAL_TASK_TYPES = {"single_hop_recall", "multi_session_reasoning"}
+
+
 def run_suite(
     dataset_path: Path,
     service_url: str,
@@ -71,9 +74,13 @@ def run_suite(
     limit: int = 10,
     embed_model: str = "BAAI/bge-m3",
 ) -> dict[str, Any]:
-    cases = load_jsonl(dataset_path)
+    all_cases = load_jsonl(dataset_path)
+    cases = [c for c in all_cases if c.get("task_type") in _RETRIEVAL_TASK_TYPES]
     if not cases:
-        raise ValueError(f"Dataset {dataset_path} is empty")
+        raise ValueError(
+            f"No retrieval-style cases in {dataset_path} "
+            f"(task_type in {_RETRIEVAL_TASK_TYPES})"
+        )
 
     recalls_1: list[float] = []
     recalls_5: list[float] = []

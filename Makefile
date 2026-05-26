@@ -18,6 +18,9 @@ help:
 	@echo "  make eval-compare-judges run LLM-judge AND NLI baseline back-to-back for the gap"
 	@echo "  make eval-temporal       run temporal_consistency on temporal_v0.jsonl (decay ON)"
 	@echo "  make eval-compare-decay  run temporal suite with decay OFF and ON for the gap"
+	@echo "  make eval-multi          run hybrid retrieval on multi_session_v0.jsonl"
+	@echo "  make eval-abstention     run abstention suite (score_threshold=0.5) on abstention_v0.jsonl"
+	@echo "  make bench-build         regenerate mnemos_bench_v1.jsonl from the 5 per-type files"
 	@echo "  make demo            open the dashboard at http://localhost:3000"
 	@echo "  make dashboard-logs  tail dashboard logs"
 	@echo "  make test            run pytest"
@@ -110,6 +113,29 @@ eval-compare-decay:
 		--leaderboard leaderboard.md \
 		--runs-dir eval-runs \
 		--mode hybrid
+
+eval-multi:
+	uv run mnemos-eval run \
+		--dataset packages/eval/mnemos_eval/datasets/multi_session_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs \
+		--mode hybrid
+
+eval-abstention:
+	uv run mnemos-eval abstention \
+		--dataset packages/eval/mnemos_eval/datasets/abstention_v0.jsonl \
+		--service-url http://localhost:8000 \
+		--leaderboard leaderboard.md \
+		--runs-dir eval-runs \
+		--mode hybrid \
+		--threshold 0.5
+
+bench-build:
+	@cd packages/eval/mnemos_eval/datasets && \
+		cat seed_v0.jsonl multi_session_v0.jsonl contradiction_v0.jsonl \
+			temporal_v0.jsonl abstention_v0.jsonl > mnemos_bench_v1.jsonl && \
+		wc -l mnemos_bench_v1.jsonl
 
 test:
 	uv run pytest

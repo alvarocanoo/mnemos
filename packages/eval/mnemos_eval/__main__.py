@@ -9,11 +9,13 @@ from rich.table import Table
 from mnemos.config import get_settings
 
 from mnemos_eval.report.leaderboard import (
+    append_abstention_row,
     append_contradiction_row,
     append_row,
     append_temporal_row,
     now_iso,
 )
+from mnemos_eval.runners.abstention_runner import run_abstention_suite
 from mnemos_eval.runners.contradiction_runner import run_contradiction_suite
 from mnemos_eval.runners.run_suite import _git_sha, run_suite
 from mnemos_eval.runners.temporal_runner import run_temporal_suite
@@ -340,6 +342,65 @@ def compare_decay(
             apply_decay=apply,
             k=5,
         )
+
+
+@app.command()
+def abstention(
+    dataset: Path = typer.Option(
+        Path(__file__).parent / "datasets" / "abstention_v0.jsonl",
+        "--dataset",
+        "-d",
+        help="JSONL with task_type=abstention cases.",
+    ),
+    service_url: str = typer.Option("http://localhost:8000", "--service-url", "-s"),
+    leaderboard: Path = typer.Option(Path.cwd() / "leaderboard.md", "--leaderboard", "-l"),
+    runs_dir: Path = typer.Option(Path.cwd() / "eval-runs", "--runs-dir"),
+    mode: str = typer.Option("hybrid", "--mode", "-m"),
+    threshold: float = typer.Option(
+        0.5, "--threshold", "-t",
+        help="Score threshold passed to /search; hits below this are dropped before the abstention check.",
+    ),
+) -> None:
+    """Ingest each abstention case, query with score_threshold, score 1 if retrieved=[]."""
+    if mode not in {"dense", "hybrid"}:
+        raise typer.BadParameter("--mode must be 'dense' or 'hybrid'")
+
+    settings = get_settings()
+    result = run_abstention_suite(
+        dataset_path=dataset,
+        service_url=service_url,
+        mode=mode,  # type: ignore[arg-type]
+        score_threshold=threshold,
+        embed_model=settings.embedding_model,
+    )
+    summary = result["summary"]
+    git_sha = _git_sha(Path.cwd())
+    summary["git_sha"] = git_sha
+    summary["timestamp"] = now_iso()
+
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    run_path = (
+        runs_dir
+        / f"eval_abstention_{mode}_{git_sha}_{summary['timestamp'].replace(':', '-')}.json"
+    )
+    run_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    append_abstention_row(leaderboard, summary)
+
+    table = Table(
+        title=f"mnemos-eval abstention — {summary['dataset']} "
+        f"(mode={mode}, thr={threshold}, n={summary['n']})"
+    )
+    for col in ["abstention_rate", "p50_ms", "p95_ms"]:
+        table.add_column(col, justify="right")
+    table.add_row(str(summary["abstention_rate"]), str(summary["p50_ms"]), str(summary["p95_ms"]))
+    console.print(table)
+    console.print(f"Wrote leaderboard row to [bold]{leaderboard}[/]")
+    console.print(f"Wrote full run to     [bold]{run_path}[/]")
+    leaks = [c for c in result["per_case"] if not c["abstained"]]
+    if leaks:
+        console.print(f"\n[bold]Leaks ({len(leaks)}):[/]")
+        for leak in leaks:
+            console.print(f"  {leak['id']}: returned {leak['n_retrieved']} hits")
 
 
 if __name__ == "__main__":
