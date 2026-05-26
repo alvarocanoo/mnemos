@@ -1,0 +1,53 @@
+[project]
+name = "mnemos-monorepo"
+version = "0.0.1"
+description = "mnemos workspace root — agent memory system with reproducible eval framework"
+requires-python = ">=3.12"
+dependencies = [
+    "mnemos-core",
+    "mnemos-service",
+    "mnemos-eval",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.28",
+    "testcontainers[postgres]>=4.8",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+mnemos-core = { workspace = true }
+mnemos-service = { workspace = true }
+mnemos-eval = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "ASYNC", "C4"]
+ignore = ["S101"]  # asserts allowed in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "B"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: requires running Postgres + Qdrant (docker compose up)",
+    "slow: takes more than 5 seconds",
+]
+testpaths = ["packages/core/tests", "packages/service/tests", "packages/eval/tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
