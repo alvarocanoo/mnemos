@@ -18,6 +18,8 @@ help:
 	@echo "  make eval-compare-judges run LLM-judge AND NLI baseline back-to-back for the gap"
 	@echo "  make eval-temporal       run temporal_consistency on temporal_v0.jsonl (decay ON)"
 	@echo "  make eval-compare-decay  run temporal suite with decay OFF and ON for the gap"
+	@echo "  make demo            open the dashboard at http://localhost:3000"
+	@echo "  make dashboard-logs  tail dashboard logs"
 	@echo "  make test            run pytest"
 	@echo "  make lint            run ruff check"
 	@echo "  make demo            (v0.5) open dashboard at http://localhost:3000"
@@ -116,8 +118,10 @@ lint:
 	uv run ruff check
 
 demo:
-	@echo "TODO v0.5: open dashboard at http://localhost:3000"
-	@exit 1
+	@echo "Dashboard at http://localhost:3000 (assumes 'make up' has been run)"
+
+dashboard-logs:
+	docker compose logs -f dashboard
 
 bench-hardware:
 	@echo "TODO v1.0: record CPU/RAM and benchmark retrieval latency"

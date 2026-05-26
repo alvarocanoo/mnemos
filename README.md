@@ -3,7 +3,7 @@
 > Agent memory system with a public, reproducible evaluation framework.
 > Hybrid retrieval, contradiction detection, configurable temporal decay, importance-weighted eviction — all measurable from a single `make eval` command.
 
-**Status**: v0.5 backend complete — hybrid retrieval (BM25 + dense + RRF), precision@k, contradiction detection (LLM-judge Claude Haiku 4.5 + NLI baseline DeBERTa-v3 with `compare-judges`), temporal decay (exp per-tier with `compare-decay`), and importance-weighted eviction landed. Pending for v1.0: dashboard (Next.js), dataset expansion to 150 examples, full leaderboard run. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
+**Status**: v0.5 complete — hybrid retrieval (BM25 + dense + RRF), precision@k, contradiction detection (LLM-judge Claude Haiku 4.5 + NLI baseline DeBERTa-v3 with `compare-judges`), temporal decay (exp per-tier with `compare-decay`), importance-weighted eviction, and Next.js 16 read-only dashboard at `localhost:3000`. Pending for v1.0: dataset expansion to 150 examples, full leaderboard run, README writeup. See [ARCHITECTURE.md](ARCHITECTURE.md) and [VERIFIED.md](VERIFIED.md).
 
 ---
 
@@ -68,6 +68,8 @@ For `make eval-contradiction` and the `/contradiction/detect` endpoint, set `ANT
 For temporal eval, `make eval-temporal` ingests memories with simulated ages (the runner sets `created_at` via the `MemoryWrite` override) and measures `temporal_consistency` (fraction of cases where the current-truth memory ranks above the superseded one in top-5). `make eval-compare-decay` runs the same suite with decay OFF and ON to quantify the lift.
 
 Eviction is exposed as a runtime endpoint, not an eval target. `POST /memories/score-eviction?user_id=X` returns the composite score per memory (dry-run). `POST /memories/evict` with `{user_id, max_count}` deletes the lowest-scored excess in Postgres and Qdrant. Composite score = `w_I·importance + w_R·decay_weight(age) + w_A·log(1+access_count)`; all three weights are tunable via env (`MNEMOS_EVICTION_W_*`).
+
+Dashboard: `make up` brings up the Next.js 16 read-only dashboard at `http://localhost:3000` alongside postgres + qdrant + service. Pages: `/memories` (paginated table with importance / age / access), `/eval` (parses `leaderboard.md` into per-block tables), `/timeline` (bars sized by composite eviction score). Server components only; data is fetched on each request from `http://service:8000` over the docker network.
 
 ---
 

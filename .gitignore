@@ -25,6 +25,7 @@ out/
 .turbo/
 *.tsbuildinfo
 .npm/
+package-lock.json
 
 # Environment
 .env

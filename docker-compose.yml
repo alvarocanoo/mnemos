@@ -53,7 +53,20 @@ services:
     volumes:
       - fastembed-cache:/root/.cache/fastembed
 
-  # dashboard:  # v0.5 (Next.js read-only views)
+  dashboard:
+    build:
+      context: .
+      dockerfile: packages/dashboard/Dockerfile
+    container_name: mnemos-dashboard
+    depends_on:
+      service: { condition: service_healthy }
+    environment:
+      INTERNAL_API_URL: http://service:8000
+      LEADERBOARD_PATH: /leaderboard.md
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./leaderboard.md:/leaderboard.md:ro
 
 volumes:
   postgres-data:
