@@ -51,13 +51,20 @@ Sources: https://arxiv.org/abs/2504.19413 + https://docs.mem0.ai/core-concepts/m
 
 Knowledge-graph + bitemporal model. Bitemporal validity intervals (not the same concept as continuous decay weighting — Zep *invalidates* edges; `mnemos` *down-weights* memories). Reports on DMR + LongMemEval but does not ship a turnkey eval CLI.
 
-### Letta — NOT FULLY VERIFIED
+### Letta — VERIFIED via GitHub source (2026-05-26)
 
-- `docs.letta.com/` and `docs.letta.com/overview` only contain marketing summaries.
-- README of `github.com/letta-ai/letta` is also a summary.
-- Concrete URL suggested for next pass: `docs.letta.com/letta-code/memory/` (per the docs link).
+Letta's public docs (`docs.letta.com/`, `docs.letta.com/overview`) only surface marketing copy. The actual retrieval / contradiction / decay / eviction behaviour was read directly from the source on `main` branch of [github.com/letta-ai/letta](https://github.com/letta-ai/letta).
 
-**Action before publishing README**: read Letta source on GitHub directly (`letta/agent.py`, `letta/memory.py` paths to confirm), or open issue/Discord to confirm. Until then, the comparison table marks Letta cells as **"unverified — see VERIFIED.md §3"** with a footnote link.
+| Feature | Verdict | Source |
+|---|---|---|
+| Hybrid (sparse+dense) retrieval | **NO** — dense OR substring `contains`, mutually exclusive | [`letta/services/helpers/agent_manager_helper.py`](https://github.com/letta-ai/letta/blob/main/letta/services/helpers/agent_manager_helper.py) `build_passage_query` / `build_agent_passage_query` — if `embedded_text` is set, orders by `cosine_distance(...)`; if not, filters with `func.lower(text).contains(func.lower(query_text))`. No tsvector, no BM25, no RRF |
+| Entity-based retrieval | **NO** | Passages carry a `tags` list (deduplicated with `list(set(tags))` in `passage_manager.py`) but tags are flat strings, not relational entities, and the retrieval queries don't join on them |
+| Contradiction detection at write | **NO** | [`letta/services/passage_manager.py`](https://github.com/letta-ai/letta/blob/main/letta/services/passage_manager.py) `insert_passage` / `create_*_passage_async` are CRUD only. No duplicate/contradiction check, just tag dedup |
+| Continuous temporal-decay weighting | **NO** | Same `build_passage_query`: timestamps used only for `created_at >= start_date` filtering and `created_at.asc()/desc()` ordering. No exponential or sigmoid weight, no half-life concept |
+| Importance-weighted eviction over archival | **NO** | Archival passages grow without bound. Letta's [`letta/services/summarizer/`](https://github.com/letta-ai/letta/tree/main/letta/services/summarizer) (`sliding_window`, `self_summarizer`, `summarizer_all`, `compact`) compresses the LLM **context window** — a different concept from evicting stored memories |
+| Public versioned eval dataset for memory | **NO** | [`tests/data/`](https://github.com/letta-ai/letta/tree/main/tests/data) contains integration-test fixtures (PDFs, source files, images) — no benchmark dataset for memory retrieval. No `benchmark*` files found via GitHub code search |
+
+**Net comparison vs `mnemos`**: Letta is a stateful agent runtime where "memory" is primarily addressed by *compacting the context window* rather than by *measuring retrieval quality over a versioned dataset*. Both are valid; they answer different questions. `mnemos` is built for the second question.
 
 ---
 
@@ -114,7 +121,7 @@ Not blocking for v0.1 (entity extraction is v0.5 scope). Action: smoke-test agai
 | Pgvector + tsvector plan B | Not needed | Drop |
 | bge-small-en-v1.5 embedding | Outdated | **Swap to BGE-M3 default, bge-small fallback for fast mode** |
 | Claude Sonnet 4.6 or gpt-4o-mini judge | Pricing OK | **Haiku 4.5 default; Sonnet 4.6 optional; Ollama Llama 3 local fallback** |
-| Letta in comparison table | Unverifiable from docs | **Mark cells "unverified" until GitHub source review done** |
+| Letta in comparison table | Verified via GitHub source (2026-05-26) | All cells populated from `build_passage_query` + `passage_manager` + `tests/data` evidence (see §3) |
 | Mem0 contradiction = YES | Confirmed (paper + docs) | Keep |
 | Mem0 decay = NO documentado | Confirmed | Tighten language: "not in paper, not in docs" |
 
@@ -122,7 +129,7 @@ Not blocking for v0.1 (entity extraction is v0.5 scope). Action: smoke-test agai
 
 ## 8. Pending actions before README v1.0
 
-- [ ] Read Letta source at `github.com/letta-ai/letta` (paths: `letta/agent.py`, `letta/services/*memory*`) and fill in the comparison table.
+- [x] Read Letta source at `github.com/letta-ai/letta` and fill in the comparison table. **Done 2026-05-26** — see §3 above; paths cited.
 - [ ] Smoke-test spaCy `en_core_web_sm` against 20 seed examples (before v0.5).
 - [ ] Re-verify Qdrant `RrfQuery` API signature against the installed Qdrant client version when pinning dependencies.
 - [ ] Confirm BGE-M3 inference latency on local Docker; if p95 > target, evaluate quantized variant.

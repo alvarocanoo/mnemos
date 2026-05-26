@@ -184,13 +184,15 @@ Sources for everything below were re-checked in [VERIFIED.md](VERIFIED.md) §3. 
 
 | Feature | Mem0 | Zep / Graphiti | Letta | `mnemos` |
 |---|---|---|---|---|
-| Hybrid (dense + sparse) out of the box | Partial — graph memory is optional, BM25 not built-in | Yes — graph + vector | *verify (Letta docs page only contains marketing summary)* | Yes — Qdrant RRF over BM25 + BGE-M3 |
-| Entity-based retrieval | Via optional graph memory | Yes — knowledge-graph entities | *verify* | Yes — Postgres entity tables (no graph DB to defend) |
-| Contradiction detection | Yes — LLM during `ADD` resolves duplicates/contradictions ([Mem0 paper §3](https://arxiv.org/abs/2504.19413)) | Yes — bitemporal invalidation ([Zep paper](https://arxiv.org/abs/2501.13956)) | *verify* | Yes — **LLM-judge + NLI baseline reported side-by-side** |
-| Continuous temporal-decay weighting | Not in paper, not in docs | Bitemporal validity intervals (a different concept — invalidation, not weighting) | *verify* | Yes — `exp(-λ_i · Δt)`, three importance tiers, tunable via eval |
-| Importance-weighted eviction | Not documented | Not documented (history preserved) | Context-window swap (not the same thing) | Yes — composite `I·w_I + R·w_R + log(1+A)·w_A`, tunable weights |
-| Public, versioned eval dataset | Reports on LOCOMO (external) | Reports on DMR + LongMemEval (external) | *verify* | Yes — `mnemos-bench-v1` (75 cases, this repo) |
+| Hybrid (dense + sparse) out of the box | Partial — graph memory is optional, BM25 not built-in | Yes — graph + vector | **No** — dense embeddings OR substring `LOWER().contains()`, mutually exclusive; no BM25 or tsvector ([`build_passage_query`](https://github.com/letta-ai/letta/blob/main/letta/services/helpers/agent_manager_helper.py)) | Yes — Qdrant RRF over BM25 + BGE-M3 |
+| Entity-based retrieval | Via optional graph memory | Yes — knowledge-graph entities | **No** — passages carry flat `tags` list, no relational entities ([`passage_manager`](https://github.com/letta-ai/letta/blob/main/letta/services/passage_manager.py)) | Yes — Postgres entity tables (no graph DB to defend) |
+| Contradiction detection at write | Yes — LLM during `ADD` resolves duplicates/contradictions ([Mem0 paper §3](https://arxiv.org/abs/2504.19413)) | Yes — bitemporal invalidation ([Zep paper](https://arxiv.org/abs/2501.13956)) | **No** — `insert_passage` / `create_*_passage_async` are CRUD only ([`passage_manager`](https://github.com/letta-ai/letta/blob/main/letta/services/passage_manager.py)) | Yes — **LLM-judge + NLI baseline reported side-by-side** |
+| Continuous temporal-decay weighting | Not in paper, not in docs | Bitemporal validity intervals (a different concept — invalidation, not weighting) | **No** — timestamps used only for `created_at` range filter and asc/desc ordering | Yes — `exp(-λ_i · Δt)`, three importance tiers, tunable via eval |
+| Importance-weighted eviction | Not documented | Not documented (history preserved) | **No** — archival grows unbounded; [`summarizer/`](https://github.com/letta-ai/letta/tree/main/letta/services/summarizer) compresses the LLM context window (different concept) | Yes — composite `I·w_I + R·w_R + log(1+A)·w_A`, tunable weights |
+| Public, versioned eval dataset for memory | Reports on LOCOMO (external) | Reports on DMR + LongMemEval (external) | **No** — `tests/data/` is integration-test fixtures (PDFs, source files), no benchmark | Yes — `mnemos-bench-v1` (75 cases, this repo) |
 | One-command local reproduction | Not the focus | Not the focus | Not the focus | **Yes — explicit goal**; `docker compose up && make eval-compare` |
+
+Letta cells were re-checked against `main` of `letta-ai/letta` on 2026-05-26; full evidence with file paths and quoted code is in [VERIFIED.md §3](VERIFIED.md#3-competitor-feature-audit--partial). Letta is a stateful **agent runtime** whose answer to "memory" is summarising the context window rather than measuring retrieval quality over a versioned dataset — a legitimate different question.
 
 The honest version of the headline:
 
@@ -208,7 +210,7 @@ Said up front and in the writeup, not buried.
 - **NLI baseline cannot distinguish `supersedes` from `contradicts`** — symmetric NLI has no notion of which fact came later. The mapping falls back to `CONTRADICTS` and the reason field says so explicitly; the writeup documents this rather than reporting a fake `supersedes` accuracy.
 - **Decay applied post-Qdrant** in Python (overfetch 3×, re-rank, truncate). For pools much larger than 10k memories per user the overfetch will start to dominate latency; the cleaner alternative is Qdrant's native `FormulaQuery` for score boosting, deferred to v2.
 - **BM25 statistics are not refit** on the mnemos corpus — fastembed's `Qdrant/bm25` uses pre-trained IDF/avgdl from its own background corpus. On heavily domain-shifted datasets, refitting would help and is documented in the docstring as a v2 candidate.
-- **Letta comparison cells are unverified.** The public docs surface marketing copy; Letta's source on GitHub has not yet been read in detail. The README does not assert what Letta does or doesn't do where evidence is missing.
+- **Letta comparison cells were filled in by reading the Letta source on `main` (2026-05-26)**, not by quoting their docs. Specific paths are cited in [VERIFIED.md §3](VERIFIED.md#3-competitor-feature-audit--partial). The comparison is restricted to features that exist as code in the upstream repo; any roadmap items they announce later belong in a future revision.
 - **First-run cost is real.** BGE-M3 weighs ~700 MB and the service image build is 3–5 minutes on a warm uv cache, ~10 minutes cold.
 
 ---
@@ -300,7 +302,7 @@ Hard rule: cutoffs cut scope, never extend dates. Where reality forced a scope c
 
 - **Mem0** — [Building Production-Ready AI Agents with Scalable Long-Term Memory (arXiv:2504.19413)](https://arxiv.org/abs/2504.19413) · [docs.mem0.ai](https://docs.mem0.ai). LLM-driven ADD/UPDATE/DELETE; vector retrieval.
 - **Zep / Graphiti** — [A Temporal Knowledge Graph Architecture for Agent Memory (arXiv:2501.13956)](https://arxiv.org/abs/2501.13956). Bitemporal validity intervals on a knowledge graph.
-- **Letta** — [github.com/letta-ai/letta](https://github.com/letta-ai/letta). Memory-first agent runtime; specific retrieval / contradiction internals pending source review (see VERIFIED.md §3).
+- **Letta** — [github.com/letta-ai/letta](https://github.com/letta-ai/letta). Memory-first agent runtime: archival passages are stored in Postgres with embeddings; retrieval is either dense (cosine) or substring `contains`, mutually exclusive. Context-window management is handled by a separate summarizer subsystem. See [VERIFIED.md §3](VERIFIED.md#3-competitor-feature-audit--partial) for source-level breakdown.
 - **LongMemEval** — [Benchmarking Chat Assistants on Long-Term Interactive Memory (arXiv:2410.10813, ICLR 2025)](https://arxiv.org/abs/2410.10813) · [repo](https://github.com/xiaowu0162/longmemeval). The academic benchmark of record; `mnemos-bench` is intentionally smaller, owned, and instrumented for system-level metrics LongMemEval does not measure (latency, decay behaviour, eviction).
 - **Anthropic API & tool-use** — [platform.claude.com docs](https://platform.claude.com/docs/en/api/overview).
 - **Qdrant hybrid queries** — [docs](https://qdrant.tech/documentation/concepts/hybrid-queries/) (RRF + DBSF fusion).
